@@ -1,0 +1,10 @@
+"./src/InitDevice.OBJ",
+"./src/Interrupts.OBJ",
+"./src/SILABS_STARTUP.OBJ",
+"./src/command_handler.OBJ",
+"./src/hdlc_l.OBJ",
+"./src/lamp_main.OBJ",
+"./src/pwm.OBJ",
+"./src/state_machine.OBJ",
+"./src/timer_4.OBJ"
+TO "LAMP_2.OMF.CRBUILD" REMOVEUNUSED PRINT(.\lamp_2.m51) PAGEWIDTH (120) PAGELENGTH (65) CLASSES( ECODE(C:0x0 - C:0x77fe), HCONST(C:0x0 - C:0x77fe), XDATA(X:0x0 - X:0x7ff), HDATA(X:0x0 - X:0x7ff))

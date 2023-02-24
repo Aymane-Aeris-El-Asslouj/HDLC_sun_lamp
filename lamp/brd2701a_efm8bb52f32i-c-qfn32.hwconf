@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ASCII"?>
+<device:XMLDevice xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:device="http://www.silabs.com/ss/hwconfig/document/device.ecore" name="EFM8BB52F32I-C-QFN32" partId="mcu.8051.efm8.bb52.efm8bb52f32i-c-qfn32" version="4.0.0" contextId="%DEFAULT%">
+  <mode name="DefaultMode">
+    <property object="CIP51_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="CIP51_0" propertyId="cip51.prefetchenginecontrol.flashreadtiming" value="SYSCLK is below 50 MHz"/>
+    <property object="CLOCK_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="CLOCK_0" propertyId="clock.clockselect.clocksourcedivider" value="SYSCLK_PREDIV / 1"/>
+    <property object="CLOCK_0" propertyId="clock.clockselect.selectclocksource" value="Internal High Frequency Oscillator 49MHz"/>
+    <property object="CROSSBAR0" propertyId="xbar0.pwm0.channeloutput" value="PWM Ch0 and Ch1 enabled"/>
+    <property object="CROSSBAR0" propertyId="xbar0.uart0.data" value="Enabled"/>
+    <property object="DefaultMode" propertyId="mode.diagramLocation" value="100, 100"/>
+    <property object="INTERRUPT_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enabletimer2interrupt" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableuart0interrupt" value="Enabled"/>
+    <property object="P0.0" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P0.0" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P0.0" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P0.1" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P0.1" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P0.1" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P0.4" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P0.4" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P0.4" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P0.5" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P0.5" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P1.4" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P1.4" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P1.4" propertyId="ports.settings.label" value="LED0"/>
+    <property object="P1.4" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P3.0" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P3.0" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P3.0" propertyId="ports.settings.label" value="BTN0"/>
+    <property object="P3.1" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P3.1" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P3.1" propertyId="ports.settings.label" value="BTN1"/>
+    <property object="P3.2" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P3.2" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P3.2" propertyId="ports.settings.label" value="BTN2"/>
+    <property object="P3.3" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P3.3" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P3.3" propertyId="ports.settings.label" value="BTN3"/>
+    <property object="P3.4" propertyId="ports.settings.inputmode" value="Digital"/>
+    <property object="P3.4" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P3.4" propertyId="ports.settings.label" value="BTN4"/>
+    <property object="PBCFG_0" propertyId="pbcfg.settings.enablecrossbar" value="Enabled"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequency" value="4.083 MHz"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequencyintegervalue" value="4083333.33333"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockperiod" value="244.898 nS"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerruncontrol.pcarun" value="Start"/>
+    <property object="PWMCH_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PWMCH_1" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PWMCH_2" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PWM_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PWM_0" propertyId="pwm.pwmclock.clockenable" value="Enable "/>
+    <property object="PWM_0" propertyId="pwm.pwmconfiguration.pwmenable" value="PWM Enabled"/>
+    <property object="PWM_0" propertyId="pwm.pwmcounter.pwmcounterlimit" value="65535"/>
+    <property object="PWM_0" propertyId="pwm.pwmcounterlimitlsb.pwmcounterlimitlsb" value="255"/>
+    <property object="PWM_0" propertyId="pwm.pwmcounterlimitmsb.pwmcounterlimitmsb" value="255"/>
+    <property object="TIMER01_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1highbyte.timer1highbyte" value="43"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode2:8bitcountertimerwithautoreload.targetoverflowfrequency" value="230400"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode2:8bitcountertimerwithautoreload.timerreloadvalue" value="43"/>
+    <property object="TIMER16_2" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_2" propertyId="timer16.control.clocksource" value="SYSCLK"/>
+    <property object="TIMER16_2" propertyId="timer16.control.runcontrol" value="Start"/>
+    <property object="TIMER16_2" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER16_3" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_3" propertyId="timer16.control.runcontrol" value="Start"/>
+    <property object="TIMER16_3" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="1000"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="61453"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="240"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="13"/>
+    <property object="TIMER16_4" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_4" propertyId="timer16.control.clocksource" value="Timer 3 Overflows"/>
+    <property object="TIMER16_4" propertyId="timer16.control.runcontrol" value="Start"/>
+    <property object="TIMER16_4" propertyId="timer16.control.selectexternalclock" value="Timer 3 Overflows"/>
+    <property object="TIMER16_4" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER16_5" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer2lowbyteclockselect" value="Use SYSCLK"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol0.timer01prescale" value="SYSCLK / 4"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer01control.timer1runcontrol" value="Start"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.clocksource" value="Use SYSCLK"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.mode" value="Mode 2, 8-bit Counter/Timer with Auto-Reload"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.timerswitch1:runcontrol" value="Start"/>
+    <property object="UART_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="UART_0" propertyId="uart.serialportcontrol.actualbaudrate" value="115023 Baud"/>
+    <property object="UART_0" propertyId="uart.serialportcontrol.enablereceive" value="Enabled"/>
+    <property object="UART_0" propertyId="uart.serialportcontrol.stopbitdetection" value="Expect logic 1"/>
+    <property object="UART_0" propertyId="uart.serialportcontrol.timer1overflowfrequency" value="230.046 kHz"/>
+    <property object="UART_0" propertyId="uart.uart#serialportcontrol.multiprocessorcommunicationenable" value="Enabled"/>
+    <property object="WDT_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="WDT_0" propertyId="wdt.watchdogcontrol.wdtenable" value="Disable"/>
+    <property object="WDT_0" propertyId="wdt.watchdogcontrol.wdtinitialvalue" value="5"/>
+    <property object="WDT_0" propertyId="wdt.watchdogcontrol.wdtperiodactual" value="6.554 s"/>
+  </mode>
+  <modeTransition>
+    <property object="RESET &#x2192; DefaultMode" propertyId="modeTransition.source" value="RESET"/>
+    <property object="RESET &#x2192; DefaultMode" propertyId="modeTransition.target" value="DefaultMode"/>
+  </modeTransition>
+</device:XMLDevice>

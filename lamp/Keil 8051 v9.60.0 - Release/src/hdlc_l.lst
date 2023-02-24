@@ -1,0 +1,351 @@
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE HDLC_L
+OBJECT MODULE PLACED IN .\src\hdlc_l.OBJ
+COMPILER INVOKED BY: C:\SiliconLabs\SimplicityStudio\v5\developer\toolchains\keil_8051\9.60\BIN\C51.exe C:\Users\elass\S
+                    -implicityStudio\v5_workspace\lamp_2\src\hdlc_l.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) 
+                    -OPTIMIZE(9,SPEED) DEFINE(NDEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:\Users\elass\SimplicityStudio\v5_workspace\lamp
+                    -_2\inc;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//Device/shared/si8051Base;C:/SiliconLabs/Simplicity
+                    -Studio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/inc) REGFILE(lamp_2.ORC) PRINT(.\src\hdlc_l.lst) COND PAGEWIDTH(12
+                    -0) PAGELENGTH(65) OBJECT(.\src\hdlc_l.OBJ)
+
+line level    source
+
+   1          #include <SI_EFM8BB52_Register_Enums.h>
+   2          #include "hdlc_l.h"
+   3          #include "state_machine.h"
+   4          
+   5          
+   6          #define HDLC_L_START_FLAG 0x7E
+   7          #define HDLC_L_END_FLAG 0x7F
+   8          #define STUFFING_BYTE 0x7D
+   9          #define STUFFING_MASK 0x20
+  10          
+  11          #define HDLC_L_CRC_POLY 0x1021
+  12          #define HDLC_L_PACKET_MIN_SIZE 3 // Fixed by protocol
+  13          #define INFO_FIELD_MAX_SIZE 5 // Variable
+  14          #define PACKET_MAX_SIZE HDLC_L_PACKET_MIN_SIZE + INFO_FIELD_MAX_SIZE
+  15          
+  16          typedef enum {
+  17              HDLC_L_CLEAR,
+  18              HDLC_L_INVALID_PACKET_SIZE,
+  19              HDLC_L_CRC_MISMATCH,
+  20              HDLC_L_INVALID_CONTROL,
+  21              HDLC_L_RECEIVE_OVERFLOW,
+  22              HDLC_L_TRANSMIT_OVERFLOW
+  23          } hdlc_l_control_field_values;
+  24          
+  25          
+  26          
+  27          
+  28          uint8_t in_packet_index = 0xFF; // Current index of in_packet. It is 0xFF till start flag is seen
+  29          uint8_t in_packet_size = 0; // Size of in_packet
+  30          uint8_t xdata in_packet[PACKET_MAX_SIZE]; // Packet being received
+  31          uint8_t receive_overflow_flag = 0; // in_packet overflowed
+  32          
+  33          uint8_t out_packet_index = 0; // Current index of out_packet
+  34          uint8_t out_packet_size = 0; // Size of out_packet
+  35          uint8_t xdata  out_packet[PACKET_MAX_SIZE]; // Packet being transmitted
+  36          uint8_t start_flag_sent = 0; // Start flag was sent
+  37          uint8_t sending_byte_to_be_stuffed = 0; // current next byte is to be stuffed
+  38          uint8_t end_flag_sent = 0; // End flag was sent
+  39          
+  40          /*
+  41           Computes the CRC of an array of bytes using the same algorithm used by the
+  42           CRC module of the EFM8BB52. CRC16-CCITT with seed 0xFFFF, and polynomial 0x1021
+  43           with no reflection of xor or input or output.
+  44           */
+  45          uint16_t hdlc_l_crc_computation(uint8_t array[], uint8_t array_size){
+  46   1          uint16_t crc_value = 0xFFFF;
+  47   1          uint8_t CRC_input;
+  48   1      
+  49   1          uint8_t array_byte; // array loop counter
+  50   1          uint8_t i; // bit loop counter
+  51   1      
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 2   
+
+  52   1          // Update CRC with each byte in the array
+  53   1          for(array_byte = 0; array_byte < array_size; array_byte++){
+  54   2              CRC_input = array[array_byte];
+  55   2      
+  56   2              crc_value = crc_value ^ (CRC_input << 8);
+  57   2      
+  58   2              // Update CRC with each bit of the input byte
+  59   2              for (i = 0; i < 8; i++){
+  60   3      
+  61   3                // Check if the MSB bit of crc_value is 1 to see if it can be
+  62   3                // divided by the polynomial
+  63   3                if ((crc_value & 0x8000) == 0x8000){
+  64   4                    // Shift then divide
+  65   4                    crc_value = crc_value << 1;
+  66   4                    crc_value ^= HDLC_L_CRC_POLY;
+  67   4                }
+  68   3                else {
+  69   4                    // Shift only
+  70   4                    crc_value = crc_value << 1;
+  71   4                }
+  72   3              }
+  73   2          }
+  74   1      
+  75   1          return crc_value;
+  76   1      }
+  77          
+  78          // Compute crc of an hdlc_l_packet over control and info fields and check if it
+  79          // does not match the value within the packet
+  80          uint8_t hdlc_l_check_packet_crc_mismatch(uint8_t packet[], uint8_t packet_size){
+  81   1      
+  82   1        uint16_t packet_crc_computed = hdlc_l_crc_computation(packet, packet_size-2);
+  83   1      
+  84   1        uint16_t packet_crc = packet[packet_size-1] + (packet[packet_size-2] << 8);
+  85   1      
+  86   1        return (packet_crc_computed != packet_crc);
+  87   1      }
+  88          
+  89          // Start transmission of hdlc_l packet from start
+  90          void hdlc_l_transmit(){
+  91   1        // Put index of transmission at start of out_packet
+  92   1        out_packet_index = 0;
+  93   1        start_flag_sent = 0;
+  94   1        end_flag_sent = 0;
+  95   1        // Trigger transmission by raising the UART0 transmission flag
+  96   1        SBUF0 |= SCON0_TI__BMASK;
+  97   1      }
+  98          
+  99          // Take the control and info fields of a packet and add the rest to make it a full
+ 100          // packet before transmission (start/end flags and CRC)
+ 101          void hdlc_l_pack_and_send_packet(){
+ 102   1        uint16_t packet_crc;
+ 103   1        // Compute and add the crc to the packet
+ 104   1        packet_crc = hdlc_l_crc_computation(out_packet, out_packet_size);
+ 105   1        out_packet[out_packet_size] = packet_crc / 0x100;
+ 106   1        out_packet[out_packet_size + 1] = packet_crc % 0x100;
+ 107   1        out_packet_size += 2;
+ 108   1        // Start transmission of out_packet
+ 109   1        hdlc_l_transmit();
+ 110   1      }
+ 111          
+ 112          // Form an info packet out of an array of info bytes
+ 113          void hdlc_l_send_info_packet(uint8_t send_info_bytes[], uint8_t send_info_bytes_size){
+ 114   1        uint8_t i;
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 3   
+
+ 115   1      
+ 116   1        // Discard packet if it would lead to buffer overflow
+ 117   1        if (send_info_bytes_size > INFO_FIELD_MAX_SIZE){
+ 118   2            hdlc_l_send_control_packet(HDLC_L_TRANSMIT_OVERFLOW);
+ 119   2            return;
+ 120   2        }
+ 121   1      
+ 122   1        // Load control byte into packet
+ 123   1        out_packet[0] = HDLC_L_CLEAR;
+ 124   1        // Load info bytes into packet
+ 125   1        for(i = 0; i < send_info_bytes_size; i++)
+ 126   1          out_packet[i+1] = send_info_bytes[i];
+ 127   1        out_packet_size = send_info_bytes_size+1;
+ 128   1        hdlc_l_pack_and_send_packet();
+ 129   1      }
+ 130          
+ 131          // Form a control packet out of a control byte
+ 132          void hdlc_l_send_control_packet(uint8_t control_byte){
+ 133   1        // Load control byte into packet
+ 134   1        out_packet[0] = control_byte;
+ 135   1        out_packet_size = 1;
+ 136   1        hdlc_l_pack_and_send_packet();
+ 137   1      }
+ 138          
+ 139          
+ 140          // Make a copy of in_packet's info field into an array
+ 141          void hdlc_l_load_received_info_bytes(uint8_t received_info_bytes[] , uint8_t* received_info_bytes_size){
+ 142   1        int i;
+ 143   1        *received_info_bytes_size = in_packet_size-HDLC_L_PACKET_MIN_SIZE;
+ 144   1      
+ 145   1        // Get info bytes from packet
+ 146   1        for(i = 0; i < *received_info_bytes_size; i++)
+ 147   1          received_info_bytes[i] = in_packet[i+1];
+ 148   1      
+ 149   1      }
+ 150          
+ 151          void destuff_in_packet(){
+ 152   1        // Start destuffing packet data starting after start flag with two cursors
+ 153   1        uint8_t i = 0;
+ 154   1        uint8_t j;
+ 155   1      
+ 156   1        // Run j cursor as an index over packet
+ 157   1        for(j = 0; j < in_packet_size; j++){
+ 158   2            // If stuffing byte found, move j cursor ahead to fetch
+ 159   2            // stuffed byte and destuff it. This reduces the packet size by 1
+ 160   2            if (in_packet[j] == STUFFING_BYTE)
+ 161   2                in_packet[i] = in_packet[++j] ^ STUFFING_MASK;
+ 162   2            else
+ 163   2                in_packet[i] = in_packet[j];
+ 164   2            // Move cursors
+ 165   2            i++;
+ 166   2        }
+ 167   1        // Update in_packet size to where i cursor ends
+ 168   1        in_packet_size = i;
+ 169   1      }
+ 170          
+ 171          
+ 172          // HDLC-L communication protocol over UART0
+ 173          SI_INTERRUPT (UART0_ISR, UART0_IRQn)
+ 174            {
+ 175   1        uint8_t received_packet_byte;
+ 176   1        uint8_t control_byte;
+ 177   1        uint8_t sending_byte;
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 4   
+
+ 178   1      
+ 179   1        // Change SFR page to that of UART0
+ 180   1        uint8_t SFRPAGE_save = SFRPAGE;
+ 181   1        SFRPAGE = 0x00;
+ 182   1      
+ 183   1        // Interrupt reason: byte transmitted
+ 184   1        if ((SCON0 & SCON0_TI__BMASK)){
+ 185   2            // Lower transmission flag
+ 186   2            SCON0 &= ~SCON0_TI__BMASK;
+ 187   2      
+ 188   2            // Check if start flag has not been sent yet
+ 189   2            if (!start_flag_sent){
+ 190   3                start_flag_sent = 1;
+ 191   3                SBUF0 = HDLC_L_START_FLAG;
+ 192   3            }
+ 193   2      
+ 194   2            // Check if there is still a byte to send in the packet
+ 195   2            else if (out_packet_index < out_packet_size){
+ 196   3      
+ 197   3                sending_byte = out_packet[out_packet_index];
+ 198   3      
+ 199   3                // Check if there is a need for stuffing. This happens when the byte
+ 200   3                // to be transmitted is not a start or end flag, and it has the same value
+ 201   3                // as a start or end flag or a stuffing byte. And it has not already been
+ 202   3                // stuffed
+ 203   3                if ((out_packet_index !=0) && (out_packet_index != out_packet_size-1) &&
+ 204   3                    ((sending_byte == HDLC_L_START_FLAG) ||
+ 205   3                        (sending_byte == HDLC_L_END_FLAG) ||
+ 206   3                        (sending_byte == STUFFING_BYTE) )){
+ 207   4                    if(!sending_byte_to_be_stuffed){
+ 208   5                        // Marking byte to be stuffed and sending stuffing byte
+ 209   5                        sending_byte_to_be_stuffed = 1;
+ 210   5                        SBUF0 = STUFFING_BYTE;
+ 211   5                    }
+ 212   4                    else {
+ 213   5                        // Removing mark for stuffing and sending stuffed byte
+ 214   5                        sending_byte_to_be_stuffed = 0;
+ 215   5                        SBUF0 = sending_byte ^ STUFFING_MASK;
+ 216   5                        // Increment out packet index
+ 217   5                        out_packet_index += 1;
+ 218   5                    }
+ 219   4                }
+ 220   3                else{
+ 221   4                    // Send next out packet byte over UART0
+ 222   4                    SBUF0 = sending_byte;
+ 223   4                    // Increment out packet index
+ 224   4                    out_packet_index += 1;
+ 225   4                }
+ 226   3      
+ 227   3            }
+ 228   2            // Check if end flag has not been sent yet
+ 229   2            else if (!end_flag_sent){
+ 230   3                end_flag_sent = 1;
+ 231   3                SBUF0 = HDLC_L_END_FLAG;
+ 232   3            }
+ 233   2        }
+ 234   1      
+ 235   1        // Interrupt reason: byte received
+ 236   1        else{
+ 237   2            // Get the received byte
+ 238   2            received_packet_byte = SBUF0;
+ 239   2      
+ 240   2            // Receiving a byte discontinues transmission
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 5   
+
+ 241   2            out_packet_size = 0;
+ 242   2      
+ 243   2            // Discard packet (reset reading) if it would lead to buffer overflow and raise the
+ 244   2            // receive buffer overflow flag so a message is sent about it
+ 245   2            if (in_packet_index == PACKET_MAX_SIZE){
+ 246   3                in_packet_index = 0;
+ 247   3                receive_overflow_flag = 1;
+ 248   3            }
+ 249   2      
+ 250   2            // If start flag, reset reception buffer
+ 251   2            if (received_packet_byte == HDLC_L_START_FLAG){
+ 252   3                in_packet_index = 0;
+ 253   3            }
+ 254   2            // If start flag already seen
+ 255   2            else if (in_packet_index != 0xFF){
+ 256   3      
+ 257   3                // If end flag, finalize reception
+ 258   3                if (received_packet_byte == HDLC_L_END_FLAG){
+ 259   4                    // Store size of in_packet
+ 260   4                    in_packet_size = in_packet_index;
+ 261   4                    // Stop reception
+ 262   4                    in_packet_index = 0xFF;
+ 263   4                    // Check if receive buffer overflowed
+ 264   4                    if (receive_overflow_flag){
+ 265   5                        hdlc_l_send_control_packet(HDLC_L_RECEIVE_OVERFLOW);
+ 266   5                        receive_overflow_flag = 0;
+ 267   5                    }
+ 268   4                    // Check if packet does not have the minimum size
+ 269   4                    else if (in_packet_size < HDLC_L_PACKET_MIN_SIZE){
+ 270   5                        hdlc_l_send_control_packet(HDLC_L_INVALID_PACKET_SIZE);
+ 271   5                    }
+ 272   4                    else{
+ 273   5                        // Destuff bytes of packet
+ 274   5                        destuff_in_packet();
+ 275   5                        control_byte = in_packet[0];
+ 276   5                        // Check if there is a CRC mismatch (asking for retransmission)
+ 277   5                        if (hdlc_l_check_packet_crc_mismatch(in_packet, in_packet_size)){
+ 278   6                            hdlc_l_send_control_packet(HDLC_L_CRC_MISMATCH);
+ 279   6                        }
+ 280   5                        // Check if the control field has invalid values
+ 281   5                        else if (control_byte != HDLC_L_CLEAR && control_byte != HDLC_L_CRC_MISMATCH){
+ 282   6                            hdlc_l_send_control_packet(HDLC_L_INVALID_CONTROL);
+ 283   6                        }
+ 284   5                        // Check if the control field is asking for a retransmission due to CRC mismatch
+ 285   5                        else if (control_byte == HDLC_L_CRC_MISMATCH){
+ 286   6                            // Start retransmission of out_packet
+ 287   6                            hdlc_l_transmit();
+ 288   6                        }
+ 289   5                        // Packet data is ready, forward command to state machine's command handler
+ 290   5                        // and disable UART0 interrupt to avoid modifying in_packet or using out_packet
+ 291   5                        // while the main state machine is modifying them
+ 292   5                        else{
+ 293   6                            IE &= ~IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
+ 294   6                            current_event = EV_COMMAND;
+ 295   6                        }
+ 296   5                    }
+ 297   4      
+ 298   4                }
+ 299   3                else {
+ 300   4                    // Add received byte to in_packet and increment in_packet index
+ 301   4                    in_packet[in_packet_index] = received_packet_byte;
+ 302   4                    in_packet_index += 1;
+ 303   4                }
+C51 COMPILER V9.60.0.0   HDLC_L                                                            02/23/2023 16:00:16 PAGE 6   
+
+ 304   3            }
+ 305   2        }
+ 306   1      
+ 307   1          // Restore SFR page
+ 308   1          SFRPAGE = SFRPAGE_save;
+ 309   1        }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    782    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     16    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      8      25
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

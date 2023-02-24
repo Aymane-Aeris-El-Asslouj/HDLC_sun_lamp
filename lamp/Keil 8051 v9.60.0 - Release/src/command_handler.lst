@@ -1,0 +1,125 @@
+C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   02/23/2023 13:56:15 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE COMMAND_HANDLER
+OBJECT MODULE PLACED IN .\src\command_handler.OBJ
+COMPILER INVOKED BY: C:\SiliconLabs\SimplicityStudio\v5\developer\toolchains\keil_8051\9.60\BIN\C51.exe C:\Users\elass\S
+                    -implicityStudio\v5_workspace\lamp_2\src\command_handler.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOAT
+                    -FUZZY(3) OPTIMIZE(9,SPEED) DEFINE(NDEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:\Users\elass\SimplicityStudio\v5_works
+                    -pace\lamp_2\inc;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//Device/shared/si8051Base;C:/SiliconLabs/S
+                    -implicityStudio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/inc) REGFILE(lamp_2.ORC) PRINT(.\src\command_handler.lst)
+                    - COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\command_handler.OBJ)
+
+line level    source
+
+   1          /*
+   2           * command_handler.c
+   3           *
+   4           *  Created on: Feb 18, 2023
+   5           *      Author: elass
+   6           */
+   7          #include "command_handler.h"
+   8          #include "pwm.h"
+   9          #include "hdlc_l.h"
+  10          #include <SI_EFM8BB52_Register_Enums.h>
+  11          
+  12          #define NUMBER_OF_COMMANDS 2
+  13          
+  14          
+  15          // List of commands
+  16          typedef enum {
+  17              CM_NONE,
+  18              CM_LIGHTNESS
+  19          } command_t;
+  20          
+  21          // Command table item with name, number of arguments, and handler
+  22          typedef struct {
+  23            command_t command;
+  24            uint8_t command_arg_count;
+  25            uint8_t (*command_handler)(uint8_t*);
+  26          } command_table_element;
+  27          
+  28          uint8_t empty_command(uint8_t* dummy){return SUCCESSFUL;}
+*** WARNING C280 IN LINE 28 OF C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\src\command_handler.c: 'dummy': unref
+             -erenced local variable
+  29          
+  30          
+  31          
+  32          command_table_element command_table[NUMBER_OF_COMMANDS] = {
+  33              // Command name,  number of arguments, command_handler
+  34              {CM_NONE,         0,                   &empty_command},
+  35              {CM_LIGHTNESS,   1,                   &set_lightness_command}
+  36          };
+  37          
+  38          void command_handler(){
+  39   1      
+  40   1        // Command from computer
+  41   1        uint8_t received_info_bytes[10];
+  42   1        // received_info_bytes's size
+  43   1        uint8_t received_info_bytes_size;
+  44   1      
+  45   1        // Response to command to computer
+  46   1        uint8_t send_info_bytes[10];
+  47   1        // Response's number of bytes
+  48   1        uint8_t send_info_bytes_size;
+  49   1      
+C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   02/23/2023 13:56:15 PAGE 2   
+
+  50   1        // Command opcode
+  51   1        uint8_t command;
+  52   1      
+  53   1        // Make a copy of in_packet's info field into received_info_bytes
+  54   1        hdlc_l_load_received_info_bytes(received_info_bytes, &received_info_bytes_size);
+  55   1      
+  56   1        // Error: No command
+  57   1        if (received_info_bytes_size == 0){
+  58   2            send_info_bytes[0] = NO_COMMAND;
+  59   2            send_info_bytes_size = 1;
+  60   2        }
+  61   1        else{
+  62   2            command = received_info_bytes[0];
+  63   2      
+  64   2            // Error: Unknown command
+  65   2            if (command >= NUMBER_OF_COMMANDS){
+  66   3                send_info_bytes[0] = UNKNOWN_COMMAND;
+  67   3                send_info_bytes_size = 1;
+  68   3            }
+  69   2      
+  70   2            // Error: Incorrect number of arguments for command
+  71   2            else if (command_table[command].command_arg_count != received_info_bytes_size - 1){
+  72   3                send_info_bytes[0] = INCORRECT_NUMBER_OF_ARGUMENTS;
+  73   3                send_info_bytes_size = 1;
+  74   3            }
+  75   2      
+  76   2             // Get command handler of the command and pass to it the arguments
+  77   2            // which are the next bytes in the packet
+  78   2            else{
+  79   3                send_info_bytes[0] = (command_table[command].command_handler)(&(received_info_bytes[1]));
+  80   3                send_info_bytes_size = 1;
+  81   3            }
+  82   2        }
+  83   1      
+  84   1        // Send packet
+  85   1        hdlc_l_send_info_packet(send_info_bytes, send_info_bytes_size);
+  86   1      
+  87   1        // Re-enable UART0 so transmission starts
+  88   1        IE |= IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
+  89   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    124    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     10      25
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
