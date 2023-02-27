@@ -28,6 +28,7 @@ enter_DefaultMode_from_RESET (void)
   WDT_0_enter_DefaultMode_from_RESET ();
   PORTS_0_enter_DefaultMode_from_RESET ();
   PORTS_1_enter_DefaultMode_from_RESET ();
+  PORTS_2_enter_DefaultMode_from_RESET ();
   PORTS_3_enter_DefaultMode_from_RESET ();
   PBCFG_0_enter_DefaultMode_from_RESET ();
   CLOCK_0_enter_DefaultMode_from_RESET ();
@@ -38,7 +39,9 @@ enter_DefaultMode_from_RESET (void)
   TIMER16_4_enter_DefaultMode_from_RESET ();
   TIMER_SETUP_0_enter_DefaultMode_from_RESET ();
   PWM_0_enter_DefaultMode_from_RESET ();
+  SMBUS_0_enter_DefaultMode_from_RESET ();
   UART_0_enter_DefaultMode_from_RESET ();
+  EXTINT_0_enter_DefaultMode_from_RESET ();
   INTERRUPT_0_enter_DefaultMode_from_RESET ();
   // Restore the SFRPAGE
   SFRPAGE = SFRPAGE_save;
@@ -85,17 +88,17 @@ PORTS_0_enter_DefaultMode_from_RESET (void)
 
   // $[P0MDOUT - Port 0 Output Mode]
   /***********************************************************************
-   - P0.0 output is push-pull
-   - P0.1 output is push-pull
-   - P0.2 output is open-drain
-   - P0.3 output is open-drain
+   - P0.0 output is open-drain
+   - P0.1 output is open-drain
+   - P0.2 output is push-pull
+   - P0.3 output is push-pull
    - P0.4 output is push-pull
    - P0.5 output is open-drain
    - P0.6 output is open-drain
    - P0.7 output is open-drain
    ***********************************************************************/
-  P0MDOUT = P0MDOUT_B0__PUSH_PULL | P0MDOUT_B1__PUSH_PULL
-      | P0MDOUT_B2__OPEN_DRAIN | P0MDOUT_B3__OPEN_DRAIN | P0MDOUT_B4__PUSH_PULL
+  P0MDOUT = P0MDOUT_B0__OPEN_DRAIN | P0MDOUT_B1__OPEN_DRAIN
+      | P0MDOUT_B2__PUSH_PULL | P0MDOUT_B3__PUSH_PULL | P0MDOUT_B4__PUSH_PULL
       | P0MDOUT_B5__OPEN_DRAIN | P0MDOUT_B6__OPEN_DRAIN
       | P0MDOUT_B7__OPEN_DRAIN;
   // [P0MDOUT - Port 0 Output Mode]$
@@ -104,16 +107,16 @@ PORTS_0_enter_DefaultMode_from_RESET (void)
   /***********************************************************************
    - P0.0 pin is configured for digital mode
    - P0.1 pin is configured for digital mode
-   - P0.2 pin is configured for analog mode
-   - P0.3 pin is configured for analog mode
+   - P0.2 pin is configured for digital mode
+   - P0.3 pin is configured for digital mode
    - P0.4 pin is configured for digital mode
    - P0.5 pin is configured for digital mode
-   - P0.6 pin is configured for analog mode
+   - P0.6 pin is configured for digital mode
    - P0.7 pin is configured for analog mode
    ***********************************************************************/
-  P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__DIGITAL | P0MDIN_B2__ANALOG
-      | P0MDIN_B3__ANALOG | P0MDIN_B4__DIGITAL | P0MDIN_B5__DIGITAL
-      | P0MDIN_B6__ANALOG | P0MDIN_B7__ANALOG;
+  P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__DIGITAL | P0MDIN_B2__DIGITAL
+      | P0MDIN_B3__DIGITAL | P0MDIN_B4__DIGITAL | P0MDIN_B5__DIGITAL
+      | P0MDIN_B6__DIGITAL | P0MDIN_B7__ANALOG;
   // [P0MDIN - Port 0 Input Mode]$
 
   // $[P0SKIP - Port 0 Skip]
@@ -153,14 +156,14 @@ PBCFG_0_enter_DefaultMode_from_RESET (void)
   /***********************************************************************
    - UART0 TX0, RX0 routed to Port pins P0.4 and P0.5
    - SPI I/O unavailable at Port pins
-   - SMBus 0 I/O unavailable at Port pins
+   - SMBus 0 I/O routed to Port pins
    - CP0 unavailable at Port pin
    - Asynchronous CP0 unavailable at Port pin
    - CP1 unavailable at Port pin
    - Asynchronous CP1 unavailable at Port pin
    - SYSCLK unavailable at Port pin
    ***********************************************************************/
-  XBR0 = XBR0_URT0E__ENABLED | XBR0_SPI0E__DISABLED | XBR0_SMB0E__DISABLED
+  XBR0 = XBR0_URT0E__ENABLED | XBR0_SPI0E__DISABLED | XBR0_SMB0E__ENABLED
       | XBR0_CP0E__DISABLED | XBR0_CP0AE__DISABLED | XBR0_CP1E__DISABLED
       | XBR0_CP1AE__DISABLED | XBR0_SYSCKE__DISABLED;
   // [XBR0 - Port I/O Crossbar 0]$
@@ -305,16 +308,15 @@ PORTS_3_enter_DefaultMode_from_RESET (void)
 
   // $[P3MDIN - Port 3 Input Mode]
   /***********************************************************************
-   - P3.0 pin is configured for digital mode
-   - P3.1 pin is configured for digital mode
-   - P3.2 pin is configured for digital mode
+   - P3.0 pin is configured for analog mode
+   - P3.1 pin is configured for analog mode
+   - P3.2 pin is configured for analog mode
    - P3.3 pin is configured for digital mode
-   - P3.4 pin is configured for digital mode
+   - P3.4 pin is configured for analog mode
    - P3.7 pin is configured for analog mode
    ***********************************************************************/
-  SFRPAGE = 0x20;
-  P3MDIN = P3MDIN_B0__DIGITAL | P3MDIN_B1__DIGITAL | P3MDIN_B2__DIGITAL
-      | P3MDIN_B3__DIGITAL | P3MDIN_B4__DIGITAL | P3MDIN_B7__ANALOG;
+  P3MDIN = P3MDIN_B0__ANALOG | P3MDIN_B1__ANALOG | P3MDIN_B2__ANALOG
+      | P3MDIN_B3__DIGITAL | P3MDIN_B4__ANALOG | P3MDIN_B7__ANALOG;
   // [P3MDIN - Port 3 Input Mode]$
 
 }
@@ -373,6 +375,19 @@ extern void
 INTERRUPT_0_enter_DefaultMode_from_RESET (void)
 {
   // $[EIE1 - Extended Interrupt Enable 1]
+  /***********************************************************************
+   - Disable ADC0 Conversion Complete interrupt
+   - Disable ADC0 Window Comparison interrupt
+   - Disable CP0 interrupts
+   - Disable CP1 interrupts
+   - Disable all Port Match interrupts
+   - Disable all PCA0 interrupts
+   - Enable interrupt requests generated by SMB0
+   - Disable Timer 3 interrupts
+   ***********************************************************************/
+  EIE1 = EIE1_EADC0__DISABLED | EIE1_EWADC0__DISABLED | EIE1_ECP0__DISABLED
+      | EIE1_ECP1__DISABLED | EIE1_EMAT__DISABLED | EIE1_EPCA0__DISABLED
+      | EIE1_ESMB0__ENABLED | EIE1_ET3__DISABLED;
   // [EIE1 - Extended Interrupt Enable 1]$
 
   // $[EIE2 - Extended Interrupt Enable 2]
@@ -398,11 +413,12 @@ INTERRUPT_0_enter_DefaultMode_from_RESET (void)
    - Disable all SPI0 interrupts
    - Disable all Timer 0 interrupt
    - Disable all Timer 1 interrupt
-   - Enable interrupt requests generated by the TF2L or TF2H flags
+   - Disable Timer 2 interrupt
    - Enable UART0 interrupt
    ***********************************************************************/
   IE = IE_EA__ENABLED | IE_EX0__DISABLED | IE_EX1__DISABLED | IE_ESPI0__DISABLED
-      | IE_ET0__DISABLED | IE_ET1__DISABLED | IE_ET2__ENABLED | IE_ES0__ENABLED;
+      | IE_ET0__DISABLED | IE_ET1__DISABLED | IE_ET2__DISABLED
+      | IE_ES0__ENABLED;
   // [IE - Interrupt Enable]$
 
   // $[IP - Interrupt Priority]
@@ -438,22 +454,24 @@ TIMER_SETUP_0_enter_DefaultMode_from_RESET (void)
 
   // $[TMOD - Timer 0/1 Mode]
   /***********************************************************************
-   - Mode 0, 13-bit Counter/Timer
+   - Mode 2, 8-bit Counter/Timer with Auto-Reload
    - Mode 2, 8-bit Counter/Timer with Auto-Reload
    - Timer Mode
    - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
    - Timer Mode
    - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
    ***********************************************************************/
-  TMOD = TMOD_T0M__MODE0 | TMOD_T1M__MODE2 | TMOD_CT0__TIMER
+  TMOD = TMOD_T0M__MODE2 | TMOD_T1M__MODE2 | TMOD_CT0__TIMER
       | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]
   /***********************************************************************
+   - INT0 is edge triggered
+   - Start Timer 0 running
    - Start Timer 1 running
    ***********************************************************************/
-  TCON |= TCON_TR1__RUN;
+  TCON |= TCON_IT0__EDGE | TCON_TR0__RUN | TCON_TR1__RUN;
   // [TCON - Timer 0/1 Control]$
 
 }
@@ -482,9 +500,17 @@ TIMER16_2_enter_DefaultMode_from_RESET (void)
   // [TMR2L - Timer 2 Low Byte]$
 
   // $[TMR2RLH - Timer 2 Reload High Byte]
+  /***********************************************************************
+   - Timer 2 Reload High Byte = 0xFE
+   ***********************************************************************/
+  TMR2RLH = (0xFE << TMR2RLH_TMR2RLH__SHIFT);
   // [TMR2RLH - Timer 2 Reload High Byte]$
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
+  /***********************************************************************
+   - Timer 2 Reload Low Byte = 0x16
+   ***********************************************************************/
+  TMR2RLL = (0x16 << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
@@ -610,7 +636,6 @@ UART_0_enter_DefaultMode_from_RESET (void)
    - RI is set and an interrupt is generated only when the stop bit is
    logic 1
    ***********************************************************************/
-  SFRPAGE = 0x00;
   SCON0 |= SCON0_REN__RECEIVE_ENABLED | SCON0_MCE__MULTI_ENABLED;
   // [SCON0 - UART0 Serial Port Control]$
 
@@ -631,6 +656,10 @@ TIMER01_0_enter_DefaultMode_from_RESET (void)
   // [Timer Initialization]$
 
   // $[TH0 - Timer 0 High Byte]
+  /***********************************************************************
+   - Timer 0 High Byte = 0x86
+   ***********************************************************************/
+  TH0 = (0x86 << TH0_TH0__SHIFT);
   // [TH0 - Timer 0 High Byte]$
 
   // $[TL0 - Timer 0 Low Byte]
@@ -651,6 +680,118 @@ TIMER01_0_enter_DefaultMode_from_RESET (void)
   TCON |= (TCON_save & TCON_TR0__BMASK) | (TCON_save & TCON_TR1__BMASK);
 
   // [Timer Restoration]$
+
+}
+
+extern void
+SMBUS_0_enter_DefaultMode_from_RESET (void)
+{
+  // $[SMB0FCN0 - SMBus0 FIFO Control 0]
+  /***********************************************************************
+   - SMBus 0 interrupts will be generated if RFRQ is set
+   - SMBus 0 interrupts will not be generated when TFRQ is set
+   - RFRQ will be set anytime new data arrives in the RX FIFO 
+   - TFRQ will be set when the TX FIFO is empty
+   ***********************************************************************/
+  SFRPAGE = 0x20;
+  SMB0FCN0 = SMB0FCN0_RFRQE__ENABLED | SMB0FCN0_TFRQE__DISABLED
+      | SMB0FCN0_RXTH__ZERO | SMB0FCN0_TXTH__ZERO;
+  // [SMB0FCN0 - SMBus0 FIFO Control 0]$
+
+  // $[SMB0RXLN - SMBus0 Receive Length Counter]
+  // [SMB0RXLN - SMBus0 Receive Length Counter]$
+
+  // $[SMB0ADR - SMBus 0 Slave Address]
+  // [SMB0ADR - SMBus 0 Slave Address]$
+
+  // $[SMB0ADM - SMBus 0 Slave Address Mask]
+  // [SMB0ADM - SMBus 0 Slave Address Mask]$
+
+  // $[SMB0TC - SMBus 0 Timing and Pin Control]
+  /***********************************************************************
+   - SDA setup time is 11 SYSCLKs and SDA hold time is 12 SYSCLKs
+   - SCL is mapped to the lower-numbered port pin, and SDA is mapped to the
+   higher-numbered port pin
+   - No additional SDA falling edge recognition delay 
+   ***********************************************************************/
+  SFRPAGE = 0x00;
+  SMB0TC = SMB0TC_DLYEXT__STANDARD | SMB0TC_SWAP__SDA_HIGH_PIN
+      | SMB0TC_SDD__NONE;
+  // [SMB0TC - SMBus 0 Timing and Pin Control]$
+
+  // $[SMB0CF - SMBus 0 Configuration]
+  /***********************************************************************
+   - Timer 2 Low Byte Overflow
+   - Slave states are inhibited
+   - Enable the SMBus module
+   ***********************************************************************/
+  SMB0CF |= SMB0CF_SMBCS__TIMER2_LOW | SMB0CF_INH__SLAVE_DISABLED
+      | SMB0CF_ENSMB__ENABLED;
+  // [SMB0CF - SMBus 0 Configuration]$
+
+}
+
+extern void
+PORTS_2_enter_DefaultMode_from_RESET (void)
+{
+  // $[P2 - Port 2 Pin Latch]
+  // [P2 - Port 2 Pin Latch]$
+
+  // $[P2MDOUT - Port 2 Output Mode]
+  // [P2MDOUT - Port 2 Output Mode]$
+
+  // $[P2MDIN - Port 2 Input Mode]
+  /***********************************************************************
+   - P2.0 pin is configured for analog mode
+   - P2.1 pin is configured for analog mode
+   - P2.2 pin is configured for analog mode
+   - P2.3 pin is configured for analog mode
+   - P2.4 pin is configured for analog mode
+   - P2.5 pin is configured for analog mode
+   - P2.6 pin is configured for digital mode
+   ***********************************************************************/
+  SFRPAGE = 0x20;
+  P2MDIN = P2MDIN_B0__ANALOG | P2MDIN_B1__ANALOG | P2MDIN_B2__ANALOG
+      | P2MDIN_B3__ANALOG | P2MDIN_B4__ANALOG | P2MDIN_B5__ANALOG
+      | P2MDIN_B6__DIGITAL;
+  // [P2MDIN - Port 2 Input Mode]$
+
+  // $[P2SKIP - Port 2 Skip]
+  /***********************************************************************
+   - P2.0 pin is not skipped by the crossbar
+   - P2.1 pin is not skipped by the crossbar
+   - P2.2 pin is not skipped by the crossbar
+   - P2.3 pin is not skipped by the crossbar
+   - P2.4 pin is not skipped by the crossbar
+   - P2.5 pin is not skipped by the crossbar
+   - P2.6 pin is skipped by the crossbar
+   ***********************************************************************/
+  P2SKIP = P2SKIP_B0__NOT_SKIPPED | P2SKIP_B1__NOT_SKIPPED
+      | P2SKIP_B2__NOT_SKIPPED | P2SKIP_B3__NOT_SKIPPED | P2SKIP_B4__NOT_SKIPPED
+      | P2SKIP_B5__NOT_SKIPPED | P2SKIP_B6__SKIPPED;
+  // [P2SKIP - Port 2 Skip]$
+
+  // $[P2MASK - Port 2 Mask]
+  // [P2MASK - Port 2 Mask]$
+
+  // $[P2MAT - Port 2 Match]
+  // [P2MAT - Port 2 Match]$
+
+}
+
+extern void
+EXTINT_0_enter_DefaultMode_from_RESET (void)
+{
+  // $[IT01CF - INT0/INT1 Configuration]
+  /***********************************************************************
+   - INT0 input is active low
+   - Select P0.6
+   - INT1 input is active low
+   - Select P0.0
+   ***********************************************************************/
+  IT01CF = IT01CF_IN0PL__ACTIVE_LOW | IT01CF_IN0SL__P0_6
+      | IT01CF_IN1PL__ACTIVE_LOW | IT01CF_IN1SL__P0_0;
+  // [IT01CF - INT0/INT1 Configuration]$
 
 }
 

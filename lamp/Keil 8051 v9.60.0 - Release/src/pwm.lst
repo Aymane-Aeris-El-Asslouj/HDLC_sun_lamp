@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   PWM                                                               02/23/2023 06:07:29 PAGE 1   
+C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE PWM
@@ -7,8 +7,9 @@ COMPILER INVOKED BY: C:\SiliconLabs\SimplicityStudio\v5\developer\toolchains\kei
                     -implicityStudio\v5_workspace\lamp_2\src\pwm.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPT
                     -IMIZE(9,SPEED) DEFINE(NDEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\
                     -inc;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStu
-                    -dio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/inc) REGFILE(lamp_2.ORC) PRINT(.\src\pwm.lst) COND PAGEWIDTH(120) PAG
-                    -ELENGTH(65) OBJECT(.\src\pwm.OBJ)
+                    -dio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/inc;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//De
+                    -vice/EFM8BB52/peripheral_driver/inc) REGFILE(lamp_2.ORC) PRINT(.\src\pwm.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(
+                    -.\src\pwm.OBJ)
 
 line level    source
 
@@ -62,83 +63,85 @@ line level    source
   48          Inverted, yields:
   49          
   50          Y = L/9.033                   L < 0.08
-  51          Y = ((L+0.16)/1.16)^3         else
-C51 COMPILER V9.60.0.0   PWM                                                               02/23/2023 06:07:29 PAGE 2   
+C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 2   
 
+  51          Y = ((L+0.16)/1.16)^3         else
   52          
   53          For 8-bit L and and 16-bit Y:
   54          
   55          Y = 28 * L                      L < 20
   56          Y = (L >> 3 + 6 )^3                 else
-  57          */
-  58          uint16_t code pwm_from_lightness[256] = {1,28,57,85,113,142,170,198,227,255,283,312,340,368,397,425,453,48
+  57          
+  58          Last element of array was replaced by 65,535q
+  59          */
+  60          uint16_t code pwm_from_lightness[256] = {1,28,57,85,113,142,170,198,227,255,283,312,340,368,397,425,453,48
              -2,510,538,567,595,
-  59              625,655,686,718,751,785,821,857,894,933,972,1012,1054,1097,1141,1186,1232,1279,1328,1378,1429,1481,153
+  61              625,655,686,718,751,785,821,857,894,933,972,1012,1054,1097,1141,1186,1232,1279,1328,1378,1429,1481,153
              -5,1590,1646,1703,
-  60              1762,1822,1883,1946,2010,2076,2143,2211,2281,2353,2425,2500,2575,2653,2731,2812,2894,2977,3062,3149,32
+  62              1762,1822,1883,1946,2010,2076,2143,2211,2281,2353,2425,2500,2575,2653,2731,2812,2894,2977,3062,3149,32
              -37,3327,3419,3512,
-  61              3607,3704,3802,3902,4004,4108,4213,4320,4429,4540,4652,4767,4883,5001,5121,5243,5367,5493,5621,5751,58
+  63              3607,3704,3802,3902,4004,4108,4213,4320,4429,4540,4652,4767,4883,5001,5121,5243,5367,5493,5621,5751,58
              -82,6016,6152,6290,
-  62              6429,6571,6715,6861,7009,7160,7312,7466,7623,7782,7943,8106,8272,8439,8609,8782,8956,9133,9312,9493,96
+  64              6429,6571,6715,6861,7009,7160,7312,7466,7623,7782,7943,8106,8272,8439,8609,8782,8956,9133,9312,9493,96
              -77,9863,10052,10243,
-  63              10436,10632,10830,11031,11234,11439,11647,11858,12071,12286,12505,12725,12949,13175,13403,13634,13868,
+  65              10436,10632,10830,11031,11234,11439,11647,11858,12071,12286,12505,12725,12949,13175,13403,13634,13868,
              -14104,14343,14585,
-  64              14830,15077,15327,15580,15835,16093,16354,16618,16885,17154,17427,17702,17980,18261,18545,18832,19121,
+  66              14830,15077,15327,15580,15835,16093,16354,16618,16885,17154,17427,17702,17980,18261,18545,18832,19121,
              -19414,19710,20009,
-  65              20310,20615,20923,21233,21547,21864,22184,22507,22834,23163,23496,23831,24170,24512,24858,25206,25558,
+  67              20310,20615,20923,21233,21547,21864,22184,22507,22834,23163,23496,23831,24170,24512,24858,25206,25558,
              -25913,26271,26633,
-  66              26998,27366,27737,28112,28491,28872,29257,29646,30038,30433,30832,31234,31640,32049,32461,32878,33297,
+  68              26998,27366,27737,28112,28491,28872,29257,29646,30038,30433,30832,31234,31640,32049,32461,32878,33297,
              -33721,34148,34578,
-  67              35012,35450,35891,36336,36785,37237,37693,38153,38617,39084,39555,40030,40508,40990,41477,41966,42460,
+  69              35012,35450,35891,36336,36785,37237,37693,38153,38617,39084,39555,40030,40508,40990,41477,41966,42460,
              -42958,43459,43965,
-  68              44474,44987,45505,46026,46551,47080,47613,48150,48691,49236,49785,50339,50896,51457,52023,52593,53166,
+  70              44474,44987,45505,46026,46551,47080,47613,48150,48691,49236,49785,50339,50896,51457,52023,52593,53166,
              -53744,54327,54913,
-  69              55503,56098,56697,57300,57908,58520,59136,59756,60381,61010,61643,62281,62923,63570,64221,64876};
-  70          uint8_t dummy = 1;
-  71          uint8_t current_lightness = 0;
-  72          void button(){
-  73   1        if ((P3 & P3_B0__BMASK) != P3_B0__BMASK){
-  74   2          if (dummy == 0){
-  75   3              dummy = 1;
-  76   3              current_lightness = 255;
-  77   3          }
-  78   2          else{
-  79   3              dummy = 0;
-  80   3              current_lightness = 0;
-  81   3          }
-  82   2          update_pwm();
-  83   2        }
-  84   1      
-  85   1      }
-  86          
-  87          void increase_lightness(){
-  88   1      
-  89   1          if(current_lightness ==254){
-  90   2              current_event = EV_STARTED;
-  91   2              return;
-  92   2          }
-  93   1          current_lightness += 2;
-  94   1      }
-  95          
-  96          
-  97          void set_lightness(uint8_t lightness){
-  98   1        current_lightness = lightness;
-  99   1        update_pwm();
- 100   1      }
- 101          
- 102          uint8_t set_lightness_command(uint8_t* args){
- 103   1        current_lightness = args[0];
-C51 COMPILER V9.60.0.0   PWM                                                               02/23/2023 06:07:29 PAGE 3   
+  71              55503,56098,56697,57300,57908,58520,59136,59756,60381,61010,61643,62281,62923,63570,64221,65535};
+  72          uint8_t dummy = 1;
+  73          uint8_t current_lightness = 0;
+  74          void button(){
+  75   1        if ((P3 & P3_B0__BMASK) != P3_B0__BMASK){
+  76   2          if (dummy == 0){
+  77   3              dummy = 1;
+  78   3              current_lightness = 255;
+  79   3          }
+  80   2          else{
+  81   3              dummy = 0;
+  82   3              current_lightness = 0;
+  83   3          }
+  84   2          update_pwm();
+  85   2        }
+  86   1      
+  87   1      }
+  88          
+  89          void increase_lightness(){
+  90   1      
+  91   1          if(current_lightness ==254){
+  92   2              current_event = EV_STARTED;
+  93   2              return;
+  94   2          }
+  95   1          current_lightness += 2;
+  96   1      }
+  97          
+  98          
+  99          void set_lightness(uint8_t lightness){
+ 100   1        current_lightness = lightness;
+ 101   1        update_pwm();
+ 102   1      }
+C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 3   
 
- 104   1        update_pwm();
- 105   1        return SUCCESSFUL;
- 106   1      }
- 107          
- 108          void update_pwm(){
- 109   1        uint16_t pwm;
- 110   1        pwm = pwm_from_lightness[current_lightness]/10;
- 111   1        pwm_set(pwm + 150, pwm + 150);
- 112   1      }
+ 103          
+ 104          uint8_t set_lightness_command(uint8_t* args){
+ 105   1        current_lightness = args[0];
+ 106   1        update_pwm();
+ 107   1        return SUCCESSFUL;
+ 108   1      }
+ 109          
+ 110          void update_pwm(){
+ 111   1        uint16_t pwm;
+ 112   1        pwm = pwm_from_lightness[current_lightness]/10;
+ 113   1        pwm_set(pwm + 150, pwm + 150);
+ 114   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

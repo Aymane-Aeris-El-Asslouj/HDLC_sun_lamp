@@ -13,6 +13,7 @@ C_SRCS += \
 ../src/hdlc_l.c \
 ../src/lamp_main.c \
 ../src/pwm.c \
+../src/rtc_driver.c \
 ../src/state_machine.c \
 ../src/timer_4.c 
 
@@ -24,6 +25,7 @@ OBJS += \
 ./src/hdlc_l.OBJ \
 ./src/lamp_main.OBJ \
 ./src/pwm.OBJ \
+./src/rtc_driver.OBJ \
 ./src/state_machine.OBJ \
 ./src/timer_4.OBJ 
 
@@ -51,9 +53,11 @@ src/command_handler.OBJ: C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc
 
 src/hdlc_l.OBJ: C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/hdlc_l.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/state_machine.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
 
-src/lamp_main.OBJ: C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/state_machine.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/InitDevice.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/timer_4.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
+src/lamp_main.OBJ: C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/state_machine.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/InitDevice.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/timer_4.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/pwm.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/rtc_driver.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
 
 src/pwm.OBJ: C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/state_machine.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/pwm.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/command_handler.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
+
+src/rtc_driver.OBJ: C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/peripheral_driver/inc/smb_0.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/rtc_driver.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/efm8_config.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
 
 src/state_machine.OBJ: C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/state_machine.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/pwm.h C:/Users/elass/SimplicityStudio/v5_workspace/lamp_2/inc/command_handler.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Register_Enums.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdint.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/EFM8BB52/inc/SI_EFM8BB52_Defs.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/si_toolchain.h C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5/Device/shared/si8051Base/stdbool.h
 

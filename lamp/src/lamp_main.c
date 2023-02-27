@@ -13,13 +13,12 @@
 #include <SI_EFM8BB52_Register_Enums.h>                  // SFR declarations
 #include "InitDevice.h"
 #include "timer_4.h"
+#include "pwm.h"
+#include "rtc_driver.h"
 
 // $[Generated Includes]
 // [Generated Includes]$
 
-// Mask of all five buttons within PORT3.
-#define P3_BTN_BMASK (P3_B4__BMASK | P3_B3__BMASK | P3_B2__BMASK \
-                      | P3_B1__BMASK | P3_B0__BMASK)
 
 //-----------------------------------------------------------------------------
 // SiLabs_Startup() Routine
@@ -38,11 +37,12 @@ SiLabs_Startup(void)
 
 
 
-
-
-
 int main(void) {
   event_t event;
+
+
+  // RTC module reset (before global init)
+  rtc_reset();
 
   // Call hardware initialization routine
   enter_DefaultMode_from_RESET ();
@@ -55,8 +55,13 @@ int main(void) {
   // Then, when they are externally pulled low by the user pressing the tactile
   // switches, we will be able to read this as a change in this very same PORT3
   // register.
-  P3 |= P3_BTN_BMASK;
+  //P3 |= P3_BTN_BMASK;
 
+
+
+  read_time_from_RTC();
+
+  //upload_time_to_RTC();
 
   // Main loop
   while (1){

@@ -1,0 +1,601 @@
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SMB_0
+OBJECT MODULE PLACED IN .\lib\efm8bb52\peripheralDrivers\src\smb_0.OBJ
+COMPILER INVOKED BY: C:\SiliconLabs\SimplicityStudio\v5\developer\toolchains\keil_8051\9.60\BIN\C51.exe C:\SiliconLabs\S
+                    -implicityStudio\v5\developer\sdks\8051\v4.2.5\Device\EFM8BB52\peripheral_driver\src\smb_0.c OMF2 SMALL DEBUG OBJECTEXTEN
+                    -D ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(9,SPEED) DEFINE(NDEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:\Use
+                    -rs\elass\SimplicityStudio\v5_workspace\lamp_2\inc;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//Device/
+                    -shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/inc;C:/SiliconLabs/Simp
+                    -licityStudio/v5/developer/sdks/8051/v4.2.5//Device/EFM8BB52/peripheral_driver/inc) REGFILE(lamp_2.ORC) PRINT(.\lib\efm8b
+                    -b52\peripheralDrivers\src\smb_0.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\lib\efm8bb52\peripheralDrivers\src\smb_
+                    -0.OBJ)
+
+line level    source
+
+   1          /**************************************************************************//**
+   2           * Copyright (c) 2021 by Silicon Laboratories Inc. All rights reserved.
+   3           *
+   4           * http://developer.silabs.com/legal/version/v11/Silicon_Labs_Software_License_Agreement.txt
+   5           *****************************************************************************/
+   6          
+   7          #include "smb_0.h"
+   8          #include "assert.h"
+   9          
+  10          #if EFM8PDL_SMB0_AUTO_PAGE == 1
+  11          // declare variable needed for autopage enter/exit
+  12          #define DECL_PAGE uint8_t savedPage
+  13          // enter autopage section
+  14          #define SET_PAGE(p)     do                                                    \
+  15                                  {                                                     \
+  16                                    savedPage = SFRPAGE;  /* save current SFR page */   \
+  17                                    SFRPAGE = (p);        /* set SFR page */            \
+  18                                  } while(0)
+  19          // exit autopage section
+  20          #define RESTORE_PAGE    do                                                    \
+  21                                  {                                                     \
+  22                                    SFRPAGE = savedPage;  /* restore saved SFR page */  \
+  23                                  } while(0)
+  24          
+  25          #else
+              #define DECL_PAGE
+              #define SET_PAGE
+              #define RESTORE_PAGE
+              #endif
+  30          
+  31          #define ALL_FLAGS  SMB0_TXMODE_SF \
+  32                             | SMB0_START_SF \
+  33                             | SMB0_STOP_SF \
+  34                             | SMB0_ACKREQ_SF \
+  35                             | SMB0_ARBLOST_SF \
+  36                             | SMB0_ACK_SF
+  37          
+  38          bool SMB0_getIntFlag()
+  39          {
+  40   1        bool val;
+  41   1        DECL_PAGE;
+  42   1        SET_PAGE(0x00);
+  43   1        val = SMB0CN0_SI;
+  44   1        RESTORE_PAGE;
+  45   1        return val;
+  46   1      }
+  47          
+  48          void SMB0_clearIntFlag()
+  49          {
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 2   
+
+  50   1        DECL_PAGE;
+  51   1        SET_PAGE(0x00);
+  52   1        SMB0CN0_SI = 0;
+  53   1        RESTORE_PAGE;
+  54   1      }
+  55          
+  56          SI_REENTRANT_FUNCTION(SMB0_getStatusFlag, uint8_t, (uint8_t flag))
+  57          {
+  58   1        uint8_t val;
+  59   1        DECL_PAGE;
+  60   1        SET_PAGE(0x00);
+  61   1        val = SMB0CN0 & flag;
+  62   1        RESTORE_PAGE;
+  63   1        return val;
+  64   1      }
+  65          
+  66          SI_REENTRANT_FUNCTION(SMB0_setStatusFlag, void, (uint8_t flag, uint8_t state))
+  67          {
+  68   1        DECL_PAGE;
+  69   1        SET_PAGE(0x00);
+  70   1        if (state)
+  71   1        {
+  72   2          SMB0CN0 |= flag;
+  73   2        }
+  74   1        else
+  75   1        {
+  76   2          SMB0CN0 &= ~flag;
+  77   2        }
+  78   1        RESTORE_PAGE;
+  79   1      }
+  80          
+  81          uint8_t SMB0_read()
+  82          {
+  83   1        uint8_t val;
+  84   1        DECL_PAGE;
+  85   1        SET_PAGE(0x00);
+  86   1        val = SMB0DAT;
+  87   1        RESTORE_PAGE;
+  88   1        return val;
+  89   1      }
+  90          
+  91          void SMB0_write(uint8_t value)
+  92          {
+  93   1        DECL_PAGE;
+  94   1        SET_PAGE(0x00);
+  95   1        SMB0DAT = value;
+  96   1        RESTORE_PAGE;
+  97   1      }
+  98          
+  99          void SMB0_abort()
+ 100          {
+ 101   1        DECL_PAGE;
+ 102   1        SET_PAGE(0x00);
+ 103   1        SMB0CF &= ~SMB0CF_ENSMB__BMASK;
+ 104   1        SMB0CF |= SMB0CF_ENSMB__BMASK;
+ 105   1        SMB0CN0 &= ~(SMB0CN0_STA__BMASK
+ 106   1            | SMB0CN0_STO__BMASK
+ 107   1            | SMB0CN0_ACKRQ__BMASK);
+ 108   1        RESTORE_PAGE;
+ 109   1      }
+ 110          
+ 111          void SMB0_ack(bool ack)
+ 112          {
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 3   
+
+ 113   1        DECL_PAGE;
+ 114   1        SET_PAGE(0x00);
+ 115   1        SMB0CN0_ACK = ack;
+ 116   1        RESTORE_PAGE;
+ 117   1      }
+ 118          
+ 119          void SMB0_start()
+ 120          {
+ 121   1        DECL_PAGE;
+ 122   1        SET_PAGE(0x00);
+ 123   1        SMB0CN0_STA = 1;
+ 124   1        RESTORE_PAGE;
+ 125   1      }
+ 126          
+ 127          void SMB0_stop()
+ 128          {
+ 129   1        DECL_PAGE;
+ 130   1        SET_PAGE(0x00);
+ 131   1        SMB0CN0_STO = 1;
+ 132   1        RESTORE_PAGE;
+ 133   1      }
+ 134          
+ 135          void SMB0_init(SMB0_Timebase_t timebase, bool sclLow)
+ 136          {
+ 137   1        DECL_PAGE;
+ 138   1        SET_PAGE(0x00);
+ 139   1        SMB0CF &= ~(SMB0CF_SMBCS__FMASK | SMB0CF_SMBTOE__BMASK);
+ 140   1        SMB0CF |= timebase
+ 141   1                  | SMB0CF_ENSMB__ENABLED
+ 142   1                  | SMB0CF_INH__SLAVE_DISABLED
+ 143   1                  | SMB0CF_SMBFTE__FREE_TO_ENABLED
+ 144   1                  | (uint8_t) sclLow << SMB0CF_SMBTOE__SHIFT;
+ 145   1        SMB0ADM |= SMB0ADM_EHACK__ADR_ACK_AUTOMATIC;
+ 146   1        RESTORE_PAGE;
+ 147   1      }
+ 148          
+ 149          void SMB0_initSlaveAddress(uint8_t address, uint8_t mask)
+ 150          {
+ 151   1        DECL_PAGE;
+ 152   1        SET_PAGE(0x00);
+ 153   1        SMB0CF  &= ~SMB0CF_INH__BMASK;
+ 154   1        SMB0ADR = address;
+ 155   1        SMB0ADM = mask | SMB0ADM_EHACK__BMASK;
+ 156   1        RESTORE_PAGE;
+ 157   1      }
+ 158          
+ 159          void SMB0_reset() {
+ 160   1        DECL_PAGE;
+ 161   1        SET_PAGE(0x00);
+ 162   1        SMB0CF  = 0x0;
+ 163   1        SMB0TC  = 0x0;
+ 164   1        SMB0CN0  = 0x0;
+ 165   1        SMB0ADR = 0x0;
+ 166   1        SMB0ADM = 0x0;
+ 167   1        RESTORE_PAGE;
+ 168   1      }
+ 169          
+ 170          #if EFM8PDL_SMB0_USE_STATEMACHINE == 1
+              SI_INTERRUPT_PROTO(SMB0_ISR, SMBUS0_IRQn);
+              SI_INTERRUPT(SMB0_ISR, SMBUS0_IRQn)
+              {
+                SFRPAGE = 0x0; //Rely on page stack for restore
+              
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 4   
+
+                if(SMB0CN0_ARBLOST) {
+                  SMB0_arbLostCb(SMB0CN0 & 0xF0);
+                }
+              
+                // Normal operation
+                switch (SMB0CN0 & 0xF0)// Status vector
+                {
+                  // SMB0CN0_MASTER ---------------------------------------------------------------
+              
+                  // Master Transmitter/Receiver: START condition transmitted.
+                  case SMB0_MASTER_START:
+                    SMB0_startCb();
+                    SMB0CN0_STA = 0;
+                    break;
+              
+                  // Master Transmitter: Data byte transmitted
+                  case SMB0_MASTER_TXDATA:
+                    SMB0_TxDataCb(true, SMB0CN0_ACK);
+                    break;
+              
+                  // Master Receiver: byte received
+                  case SMB0_MASTER_RXDATA:
+                    SMB0_RxDataCb(true);
+                    break;
+              
+                  case SMB0_SLAVE_TXDATA:
+                    SMB0_TxDataCb(false, SMB0CN0_ACK);
+                    break;
+              
+                  case SMB0_SLAVE_ADDRESS:
+                    if(SMB0CN0_ARBLOST)
+                    {
+                      SMB0_arbLostCb(SMB0CN0 & 0xF0);
+                    }
+                    else
+                    {
+                      SMB0_addressCb();
+                    }
+                    SMB0CN0_STA = 0;  // Clear SMB0CN0_STA bit
+                    break;
+                                                    // Slave Receiver: Data received
+                  case SMB0_SLAVE_RXDATA:
+                    SMB0_RxDataCb(false);
+                    break;
+              
+                                                    // Slave Receiver: Stop received while either a Slave Receiver or Sl
+             -ave
+                                                    // Transmitter
+                  case SMB0_SLAVE_RX_STOP:
+                  case SMB0_SLAVE_TX_STOP:
+                    SMB0_stopCb();
+                    SMB0CN0_STO = 0;
+                    break;
+              
+                  default:
+                    break;
+              
+                } // end switch
+              
+                //Need an SMBus Restart?
+                SMB0CN0_SI = 0;// Clear interrupt flag
+              }
+              #endif //EFM8PDL_SMB0_USE_STATEMACHINE
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 5   
+
+ 238          
+ 239          #if EFM8PDL_SMB0_USE_BUFFER == 1
+ 240          
+ 241          SI_SEGMENT_VARIABLE(mAddress, uint8_t, SI_SEG_XDATA);
+ 242          SI_SEGMENT_VARIABLE(mTxCount, uint8_t, SI_SEG_XDATA);
+ 243          SI_SEGMENT_VARIABLE(mRxCount, uint8_t, SI_SEG_XDATA);
+ 244          SI_SEGMENT_VARIABLE_SEGMENT_POINTER(mTxBuffer, uint8_t, EFM8PDL_SMB0_RX_BUFTYPE,
+ 245              SI_SEG_XDATA);
+ 246          SI_SEGMENT_VARIABLE_SEGMENT_POINTER(mRxBuffer, uint8_t, EFM8PDL_SMB0_TX_BUFTYPE,
+ 247              SI_SEG_XDATA);
+ 248          
+ 249          SI_SEGMENT_VARIABLE(sRxSize, uint8_t, SI_SEG_XDATA);
+ 250          SI_SEGMENT_VARIABLE(sRxCount, uint8_t, SI_SEG_XDATA);
+ 251          SI_SEGMENT_VARIABLE(sTxCount, uint8_t, SI_SEG_XDATA);
+ 252          SI_SEGMENT_VARIABLE_SEGMENT_POINTER(sRxBuffer, uint8_t, EFM8PDL_SMB0_RX_BUFTYPE,
+ 253              SI_SEG_XDATA);
+ 254          SI_SEGMENT_VARIABLE_SEGMENT_POINTER(sTxBuffer, uint8_t, EFM8PDL_SMB0_TX_BUFTYPE,
+ 255              SI_SEG_XDATA);
+ 256          
+ 257          SI_SEGMENT_VARIABLE(smbBusy, bool, SI_SEG_DATA);
+ 258          SI_SEGMENT_VARIABLE(smbReq, bool, SI_SEG_DATA);
+ 259          SI_SEGMENT_VARIABLE(smbReceive, bool, SI_SEG_DATA);
+ 260          SI_SEGMENT_VARIABLE(mRetries, uint8_t, SI_SEG_XDATA);
+ 261          
+ 262          void SMB0_transfer(uint8_t address,
+ 263              SI_VARIABLE_SEGMENT_POINTER(txBuffer, uint8_t, EFM8PDL_SMB0_TX_BUFTYPE),
+ 264              SI_VARIABLE_SEGMENT_POINTER(rxBuffer, uint8_t, EFM8PDL_SMB0_RX_BUFTYPE),
+ 265              uint8_t tx_len, uint8_t rx_len)
+ 266          {
+ 267   1        DECL_PAGE;
+ 268   1        SET_PAGE(0x00);
+ 269   1      
+ 270   1        //Setup transfer
+ 271   1        mAddress = address;
+ 272   1        mTxBuffer = txBuffer;
+ 273   1        mRxBuffer = rxBuffer;
+ 274   1        mTxCount = tx_len;
+ 275   1        mRxCount = rx_len;
+ 276   1        mRetries = EFM8PDL_SMB0_MASTER_RETRIES;
+ 277   1      
+ 278   1        if (smbBusy) {
+ 279   2          smbReq = true;
+ 280   2        } else {
+ 281   2          //Start transfer
+ 282   2          SMB0CN0_STA = 1;
+ 283   2        }
+ 284   1        RESTORE_PAGE;
+ 285   1      }
+ 286          
+ 287          void SMB0_abortTransfer(){
+ 288   1        mTxCount = 0;
+ 289   1        mRxCount = 0;
+ 290   1        sTxCount = 0;
+ 291   1        
+ 292   1        smbBusy = false;
+ 293   1        smbReq = false;
+ 294   1      }
+ 295          
+ 296          uint8_t SMB0_txBytesRemaining() {
+ 297   1        return mTxCount;
+ 298   1      }
+ 299          
+ 300          uint8_t SMB0_rxBytesRemaining() {
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 6   
+
+ 301   1        return mRxCount;
+ 302   1      }
+ 303          
+ 304          void SMB0_initSlave(uint8_t address,
+ 305                              SI_VARIABLE_SEGMENT_POINTER(commandBuffer, uint8_t, EFM8PDL_SMB0_RX_BUFTYPE), uint8_t 
+             -length)
+ 306          {
+ 307   1        DECL_PAGE;
+ 308   1        SET_PAGE(0x00);
+ 309   1        SMB0CF  &= ~SMB0CF_INH__BMASK;
+ 310   1        SMB0ADR = address;
+ 311   1        SMB0ADM = 0xFF | SMB0ADM_EHACK__BMASK;
+ 312   1        sRxBuffer = commandBuffer;
+ 313   1        sRxSize = length;
+ 314   1        sRxCount = 0;
+ 315   1        RESTORE_PAGE;
+ 316   1      }
+ 317          
+ 318          uint8_t SMB0_getCommandLength() {
+ 319   1        return sRxCount;
+ 320   1      }
+ 321          
+ 322          void SMB0_sendResponse(
+ 323              SI_VARIABLE_SEGMENT_POINTER(dataBuffer, uint8_t, EFM8PDL_SMB0_TX_BUFTYPE),
+ 324              uint8_t length) {
+ 325   1        sTxBuffer = dataBuffer;
+ 326   1        sTxCount = length;
+ 327   1      }
+ 328          
+ 329          SI_INTERRUPT_PROTO(SMB0_ISR, SMBUS0_IRQn);
+ 330          
+ 331          SI_INTERRUPT(SMB0_ISR, SMBUS0_IRQn)
+ 332          {
+ 333   1        SFRPAGE = 0x0;  // Rely on page stack to restore
+ 334   1      
+ 335   1        // Jump to status vector handler
+ 336   1        switch (SMB0CN0 & 0xF0)
+ 337   1        {
+ 338   2        // Master Transmitter/Receiver: START condition transmitted.
+ 339   2        case SMB0_MASTER_START:
+ 340   2          //Send address. If no tx data then initiate read.
+ 341   2          // Must make a single access to SMB0DAT because it's a fifo and
+ 342   2          // = follwed by |= writes to two slots in the fifo.
+ 343   2          if (!mTxCount)
+ 344   2          {
+ 345   3            SMB0DAT = (mAddress | 0x01);
+ 346   3            smbReceive = true;
+ 347   3          }
+ 348   2          else
+ 349   2          {
+ 350   3            SMB0DAT = mAddress;
+ 351   3            smbReceive = false;
+ 352   3          }
+ 353   2          //smbReceive = SMB0DAT & 0x01;
+ 354   2      
+ 355   2          //tailchain: clear_start;
+ 356   2          SMB0CN0_STA = 0;
+ 357   2          smbBusy = true;
+ 358   2          break;
+ 359   2      
+ 360   2        // Master Transmitter: Data byte transmitted
+ 361   2        case SMB0_MASTER_TXDATA:
+ 362   2          if (SMB0CN0_ACK)
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 7   
+
+ 363   2          {
+ 364   3            if (smbReceive)
+ 365   3            {
+ 366   4              //Handle read transfer
+ 367   4              if(!--mRxCount)
+ 368   4              {
+ 369   5                SMB0CN0_ACK = 0; //ack for first data receviced byte
+ 370   5              }
+ 371   4              //ACK = 1 by default so no need to set it
+ 372   4            }
+ 373   3            else
+ 374   3            {
+ 375   4              //Handle write's
+ 376   4              if (mTxCount)
+ 377   4              {
+ 378   5                //if data remains in tx buffer send next byte
+ 379   5                SMB0DAT = *mTxBuffer++;
+ 380   5                mTxCount--;
+ 381   5              }
+ 382   4              else
+ 383   4              {
+ 384   5                //Handle writes finished
+ 385   5                if (mRxCount)
+ 386   5                {
+ 387   6                  //if tx done and rx remaining do repeated start
+ 388   6                  SMB0CN0_STA = 1;
+ 389   6                }
+ 390   5                else
+ 391   5                {
+ 392   6                  //if tx done and no rx then stop
+ 393   6                  //tailchain: stop_seq
+ 394   6                  SMB0_transferCompleteCb();
+ 395   6                  SMB0CN0_STO = 1;
+ 396   6                  SMB0CN0_STA = smbReq;
+ 397   6                  smbReq = false;
+ 398   6                  smbBusy = false;
+ 399   6                } // if rxCount else
+ 400   5              }   //if txCount else
+ 401   4            }     //if ! rxReceive (rxReceive = ack of address so ignore)
+ 402   3          }       // if ACK
+ 403   2          else
+ 404   2          {
+ 405   3            //Error on NAC
+ 406   3            SMB0_errorCb(SMB0_NACK_ERROR);
+ 407   3      
+ 408   3            //tailchain: stop_seq
+ 409   3            SMB0CN0_STO = 1;
+ 410   3            SMB0CN0_STA = smbReq; //necessary for tailchain
+ 411   3            smbReq = false; //necessary for tailchain
+ 412   3            smbBusy = false;
+ 413   3          }
+ 414   2          break;
+ 415   2      
+ 416   2        // Master Receiver: byte received
+ 417   2        case SMB0_MASTER_RXDATA:
+ 418   2          //Read in data we just received
+ 419   2          *mRxBuffer++ = SMB0DAT;
+ 420   2      
+ 421   2          //if bytes remain read this one and setup for next one
+ 422   2          if (mRxCount)
+ 423   2          {
+ 424   3            //NACK if the byte we are about to read is our last
+ 425   3            if (!--mRxCount)
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 8   
+
+ 426   3            {
+ 427   4              SMB0CN0_ACK = 0;
+ 428   4            }
+ 429   3            //ACK =1  by default so no need to set it.
+ 430   3          }
+ 431   2          else
+ 432   2          {
+ 433   3            SMB0CN0_ACK = 0;
+ 434   3      
+ 435   3            // If no bytes remain notify user xfer complete and issue stop.
+ 436   3            //tailchain: stop_seq
+ 437   3            SMB0_transferCompleteCb();
+ 438   3            SMB0CN0_STO = 1;
+ 439   3            SMB0CN0_STA = smbReq;
+ 440   3            smbReq = false;
+ 441   3            smbBusy = false;
+ 442   3          }
+ 443   2          break;
+ 444   2      
+ 445   2        // Slave Transmitter: Data byte transmitted
+ 446   2        case SMB0_SLAVE_TXDATA:
+ 447   2          if(SMB0CN0_ACK)
+ 448   2          {
+ 449   3            if(--sTxCount)
+ 450   3            {
+ 451   4              SMB0DAT = *sTxBuffer++;
+ 452   4            }
+ 453   3            else
+ 454   3            {
+ 455   4              SMB0_errorCb(SMB0_TXUNDER_ERROR);
+ 456   4            }
+ 457   3          }
+ 458   2          break;
+ 459   2      
+ 460   2        // Slave Receiver: Start+Address received
+ 461   2        case SMB0_SLAVE_ADDRESS:
+ 462   2          if(SMB0CN0_ARBLOST)
+ 463   2          {
+ 464   3            if(mRetries--)
+ 465   3            {
+ 466   4              smbReq = true;
+ 467   4            }
+ 468   3            else
+ 469   3            {
+ 470   4              SMB0_errorCb(SMB0_ARBLOST_ERROR);
+ 471   4            }
+ 472   3          }
+ 473   2      
+ 474   2          smbReceive = !(SMB0DAT & 0x01);
+ 475   2          // Nack defaults to 1 so no need to set it
+ 476   2      
+ 477   2          //Clear receive count if we are about to receive OR
+ 478   2          // if we have no rx phase (we are a write only xfer)
+ 479   2          // We leave rxCount alone if this is a repeated start
+ 480   2          if(smbReceive || !smbBusy)
+ 481   2          {
+ 482   3            sRxCount = 0;
+ 483   3          }
+ 484   2      
+ 485   2          // If this is a read then fire command received
+ 486   2          // either a read or a repeated start has been requested
+ 487   2          if (!smbReceive) {
+ 488   3            if(sRxCount || !smbBusy){
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 9   
+
+ 489   4              //Issue a command received callback if there is RX data or if this
+ 490   4              // is not a repeated start
+ 491   4              SMB0_commandReceivedCb();
+ 492   4            }
+ 493   3      
+ 494   3            SMB0DAT = *sTxBuffer++;
+ 495   3            //DO NOT dec sTxSize This is handled AFTER the first byte is transmited
+ 496   3          }
+ 497   2      
+ 498   2          //tailchain: clear_start
+ 499   2          SMB0CN0_STA = 0;
+ 500   2          smbBusy = true;
+ 501   2          break;
+ 502   2      
+ 503   2        // Slave Receiver: Data received
+ 504   2        case SMB0_SLAVE_RXDATA:
+ 505   2          //Read data into buffer
+ 506   2          sRxBuffer[sRxCount++] = SMB0DAT;
+ 507   2      
+ 508   2          //If buffer is about to overflow callback user and reset buffer
+ 509   2          if (sRxCount == sRxSize)
+ 510   2          {
+ 511   3            SMB0_commandReceivedCb();
+ 512   3            sRxCount = 0;
+ 513   3          }
+ 514   2      
+ 515   2          //ACK = 1 by default so no need to set it
+ 516   2          break;
+ 517   2      
+ 518   2        // Slave Receiver: Stop received while either a Slave Receiver or Transmitter
+ 519   2        case SMB0_SLAVE_RX_STOP:
+ 520   2        case SMB0_SLAVE_TX_STOP:
+ 521   2          if (smbReceive && sRxCount)
+ 522   2          {
+ 523   3            SMB0_commandReceivedCb();
+ 524   3          }
+ 525   2      
+ 526   2          //clear stop
+ 527   2          SMB0CN0_STO = 0;
+ 528   2      
+ 529   2          //If master request pending send a start.
+ 530   2          //tailchain: stop_seq
+ 531   2          SMB0CN0_STA = smbReq;
+ 532   2          smbReq = false;
+ 533   2          smbBusy = false;
+ 534   2          break;
+ 535   2      
+ 536   2        default:
+ 537   2          // All other cases are an error
+ 538   2          SMB0_errorCb(SMB0_UNKNOWN_ERROR);
+ 539   2          // ----------------------------------------------------------------------
+ 540   2        } // end switch
+ 541   1      
+ 542   1        //Clear interrupt flag
+ 543   1        SMB0CN0_SI = 0;
+ 544   1      
+ 545   1      }
+ 546          
+ 547          #endif //EFM8PDL_SMB0_USE_BUFFER
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    821    ----
+C51 COMPILER V9.60.0.0   SMB_0                                                             02/27/2023 00:24:45 PAGE 10  
+
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     15    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3       3
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

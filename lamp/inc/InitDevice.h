@@ -31,6 +31,8 @@ PORTS_0_enter_DefaultMode_from_RESET (void);
 extern void
 PORTS_1_enter_DefaultMode_from_RESET (void);
 extern void
+PORTS_2_enter_DefaultMode_from_RESET (void);
+extern void
 PORTS_3_enter_DefaultMode_from_RESET (void);
 extern void
 PBCFG_0_enter_DefaultMode_from_RESET (void);
@@ -51,7 +53,11 @@ TIMER_SETUP_0_enter_DefaultMode_from_RESET (void);
 extern void
 PWM_0_enter_DefaultMode_from_RESET (void);
 extern void
+SMBUS_0_enter_DefaultMode_from_RESET (void);
+extern void
 UART_0_enter_DefaultMode_from_RESET (void);
+extern void
+EXTINT_0_enter_DefaultMode_from_RESET (void);
 extern void
 INTERRUPT_0_enter_DefaultMode_from_RESET (void);
 // [Config(Per-Module Mode)Transition Prototypes]$
