@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 01:44:29 PAGE 1   
+C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 07:49:15 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE LAMP_MAIN
@@ -52,48 +52,45 @@ line level    source
   37          
   38          
   39          
-  40          
-  41          
-  42          
-  43          int main(void) {
-  44   1        event_t event;
-  45   1      
+  40          int main(void) {
+  41   1        event_t event;
+  42   1      
+  43   1      
+  44   1        // RTC module reset (before global init)
+  45   1        rtc_reset();
   46   1      
-  47   1        // RTC module reset (before global init)
-  48   1        rtc_reset();
+  47   1        // Call hardware initialization routine
+  48   1        enter_DefaultMode_from_RESET ();
   49   1      
-  50   1        // Call hardware initialization routine
-C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 01:44:29 PAGE 2   
+  50   1        // Set all the button pins high.
+C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 07:49:15 PAGE 2   
 
-  51   1        enter_DefaultMode_from_RESET ();
-  52   1      
-  53   1        // Set all the button pins high.
-  54   1        // Because the pins are configured as open-drain, setting them high disables
-  55   1        // their MOSFETs (which would otherwise pull down against their internal
-  56   1        // pullup resistors and external pullups, if present) and lets the pullups
-  57   1        // pull them high.
-  58   1        // Then, when they are externally pulled low by the user pressing the tactile
-  59   1        // switches, we will be able to read this as a change in this very same PORT3
-  60   1        // register.
-  61   1        //P3 |= P3_BTN_BMASK;
-  62   1      
+  51   1        // Because the pins are configured as open-drain, setting them high disables
+  52   1        // their MOSFETs (which would otherwise pull down against their internal
+  53   1        // pullup resistors and external pullups, if present) and lets the pullups
+  54   1        // pull them high.
+  55   1        // Then, when they are externally pulled low by the user pressing the tactile
+  56   1        // switches, we will be able to read this as a change in this very same PORT3
+  57   1        // register.
+  58   1        //P3 |= P3_BTN_BMASK;
+  59   1      
+  60   1      
+  61   1      
+  62   1        read_time_from_RTC();
   63   1      
-  64   1      
-  65   1        read_time_from_RTC();
-  66   1      
-  67   1        //upload_time_to_RTC();
-  68   1      
-  69   1        // Main loop
-  70   1        while (1){
-  71   2            // $[Generated Run-time code]
-  72   2            // [Generated Run-time code]$
-  73   2      
-  74   2            // Fetch current event, run the state machine, and delay
-  75   2            event = fetch_event();
-  76   2            state_machine_run_iteration(event);
-  77   2            timer_4_delay_ms(STATE_MACHINE_PERIOD);
-  78   2          }
-  79   1      }
+  64   1        //upload_time_to_RTC();
+  65   1      
+  66   1        // Main loop
+  67   1        while (1){
+  68   2            // $[Generated Run-time code]
+  69   2            // [Generated Run-time code]$
+  70   2      
+  71   2            // Fetch current event, run the state machine, and delay
+  72   2            event = fetch_event();
+  73   2            state_machine_run_iteration(event);
+  74   2            timer_4_delay_ms(STATE_MACHINE_PERIOD);
+  75   2          }
+  76   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

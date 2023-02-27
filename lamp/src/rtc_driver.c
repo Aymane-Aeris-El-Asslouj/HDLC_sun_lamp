@@ -114,31 +114,11 @@ void read_time_from_RTC(){
   // Wait for transfer to end
   while(!transfer_complete);
 
-  rtc_data.seconds = BCD_to_HEX(rtc_receive_buffer[RTC_SECONDS_REG] & RTC_SECONDS_MASK);
-  rtc_data.minutes = BCD_to_HEX(rtc_receive_buffer[RTC_MINUTES_REG] & RTC_MINUTES_MASK);
-
-  rtc_data.hours = rtc_receive_buffer[RTC_HOURS_REG] & 0x7F;
-
-  // 12 hours mode
-  if(rtc_data.hours & RTC_HOURS_REG_MODE_BIT__BMASK){
-      pm = rtc_data.hours & RTC_HOURS_REG_PM_BIT__BMASK;
-      rtc_data.hours = BCD_to_HEX(rtc_data.hours & RTC_HOURS12_MASK);
-
-      if(rtc_data.hours == 12)
-        {
-          if(!pm)
-              rtc_data.hours = 0; // 12AM is 00
-        }
-
-      else if(pm)
-          rtc_data.hours += 12;
-  }
-  // 24 hour mode
-  else
-      rtc_data.hours = BCD_to_HEX(rtc_data.hours & RTC_HOURS24_MASK);
-
-  rtc_data.date = BCD_to_HEX(rtc_receive_buffer[RTC_DATE_REG] & RTC_DATE_MASK);
-  rtc_data.month = BCD_to_HEX(rtc_receive_buffer[RTC_MONTH_REG] & RTC_MONTH_MASK);
+  rtc_data.seconds = BCD_to_HEX(rtc_receive_buffer[RTC_SECONDS_REG]);
+  rtc_data.minutes = BCD_to_HEX(rtc_receive_buffer[RTC_MINUTES_REG]);
+  rtc_data.hours = BCD_to_HEX(rtc_receive_buffer[RTC_HOURS_REG]);
+  rtc_data.date = BCD_to_HEX(rtc_receive_buffer[RTC_DATE_REG]);
+  rtc_data.month = BCD_to_HEX(rtc_receive_buffer[RTC_MONTH_REG]);
   rtc_data.year = BCD_to_HEX(rtc_receive_buffer[RTC_YEAR_REG]);
   rtc_data.invalid = rtc_receive_buffer[RTC_STATUS_REG] >> RTC_STATUS_REG_OSF__SHIFT;
 

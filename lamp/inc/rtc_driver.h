@@ -23,11 +23,6 @@
 #define SCL_PnMDIN_Bm__BMASK P0MDIN_B0__BMASK
 #define SDA_PnMDIN_Bm__BMASK P0MDIN_B1__BMASK
 
-
-#define LOW_5BIT_MASK 0x1F
-#define LOW_6BIT_MASK 0x3F
-#define LOW_7BIT_MASK 0x7F
-
 // Covers all register values for RTC module till aging offset register.
 #define RTC_RECEIVE_BUFFER_SIZE 17
 // Covers initial register address for write and all register values
@@ -43,15 +38,6 @@
 #define RTC_YEAR_REG 0x06
 #define RTC_STATUS_REG 0x0F
 
-#define RTC_SECONDS_MASK LOW_7BIT_MASK
-#define RTC_MINUTES_MASK LOW_7BIT_MASK
-#define RTC_HOURS12_MASK LOW_5BIT_MASK
-#define RTC_HOURS24_MASK LOW_6BIT_MASK
-#define RTC_DATE_MASK LOW_6BIT_MASK
-#define RTC_MONTH_MASK LOW_5BIT_MASK
-
-#define RTC_HOURS_REG_MODE_BIT__BMASK 0x40
-#define RTC_HOURS_REG_PM_BIT__BMASK 0x20
 #define RTC_STATUS_REG_OSF__SHIFT 7
 
 #define RTC_DEVICE_ADDRESS 0x68
