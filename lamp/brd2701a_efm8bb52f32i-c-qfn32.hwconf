@@ -15,6 +15,7 @@
     <property object="INTERRUPT_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptenable1.enablesmbussmb0interrupt" value="Enabled"/>
     <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableexternal0interrupt" value="Enabled"/>
     <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableuart0interrupt" value="Enabled"/>
     <property object="INTERRUPT_0" propertyId="interruptenables.codegenerationoptions.generateinterruptfunctions" value="Disabled"/>
     <property object="P0.0" propertyId="ports.settings.inputmode" value="Digital"/>
@@ -35,12 +36,12 @@
     <property object="P0.6" propertyId="ports.settings.inputmode" value="Digital"/>
     <property object="P0.6" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
     <property object="P0.6" propertyId="ports.settings.label" value="SQW"/>
-    <property object="P1.4" propertyId="ports.settings.inputmode" value="Digital"/>
-    <property object="P1.4" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
-    <property object="P1.4" propertyId="ports.settings.label" value="LED0"/>
-    <property object="P1.4" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P0.6" propertyId="ports.settings.skip" value="Skipped"/>
     <property object="P2.6" propertyId="ports.settings.inputmode" value="Digital"/>
-    <property object="P2.6" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>
+    <property object="P2.6" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P2.6" propertyId="ports.settings.label" value="ERROR_LED"/>
+    <property object="P2.6" propertyId="ports.settings.latch" value="Low"/>
+    <property object="P2.6" propertyId="ports.settings.outputmode" value="Push-pull"/>
     <property object="P2.6" propertyId="ports.settings.skip" value="Skipped"/>
     <property object="P3.3" propertyId="ports.settings.inputmode" value="Digital"/>
     <property object="P3.3" propertyId="ports.settings.iomode" value="Digital OpenDrain I/O"/>

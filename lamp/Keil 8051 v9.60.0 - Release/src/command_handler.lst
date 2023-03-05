@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   02/27/2023 00:24:44 PAGE 1   
+C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   03/04/2023 16:53:23 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE COMMAND_HANDLER
@@ -19,103 +19,129 @@ line level    source
    4           *  Created on: Feb 18, 2023
    5           *      Author: elass
    6           */
-   7          #include "command_handler.h"
-   8          #include "pwm.h"
-   9          #include "hdlc_l.h"
-  10          #include <SI_EFM8BB52_Register_Enums.h>
-  11          
-  12          #define NUMBER_OF_COMMANDS 2
+   7          #include <SI_EFM8BB52_Register_Enums.h>
+   8          #include "command_handler.h"
+   9          #include "pwm.h"
+  10          #include "hdlc_l.h"
+  11          #include "state_machine.h"
+  12          #include "rtc_driver.h"
   13          
-  14          
-  15          // List of commands
-  16          typedef enum {
-  17              CM_NONE,
-  18              CM_LIGHTNESS
-  19          } command_t;
-  20          
-  21          // Command table item with name, number of arguments, and handler
-  22          typedef struct {
-  23            command_t command;
-  24            uint8_t command_arg_count;
-  25            uint8_t (*command_handler)(uint8_t*);
-  26          } command_table_element;
-  27          
-  28          uint8_t empty_command(uint8_t* dummy){return SUCCESSFUL;}
-*** WARNING C280 IN LINE 28 OF C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\src\command_handler.c: 'dummy': unref
-             -erenced local variable
-  29          
-  30          
-  31          
-  32          command_table_element command_table[NUMBER_OF_COMMANDS] = {
-  33              // Command name,  number of arguments, command_handler
-  34              {CM_NONE,         0,                   &empty_command},
-  35              {CM_LIGHTNESS,   1,                   &set_lightness_command}
-  36          };
-  37          
-  38          void command_handler(){
-  39   1      
-  40   1        // Command from computer
-  41   1        uint8_t received_info_bytes[10];
-  42   1        // received_info_bytes's size
-  43   1        uint8_t received_info_bytes_size;
-  44   1      
-  45   1        // Response to command to computer
-  46   1        uint8_t send_info_bytes[10];
-  47   1        // Response's number of bytes
-  48   1        uint8_t send_info_bytes_size;
-C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   02/27/2023 00:24:44 PAGE 2   
+  14          #define NUMBER_OF_COMMANDS 6
+  15          
+  16          
+  17          // List of commands
+  18          typedef enum {
+  19              CM_NONE,
+  20              CM_LIGHTNESS,
+  21              CM_DISCONNECT,
+  22              CM_GET_DATETIME,
+  23              CM_SET_DATETIME,
+  24              CM_GET_SUNRISETIME
+  25          } command_t;
+  26          
+  27          // Command table item with name, number of arguments, and handler
+  28          typedef struct {
+  29            command_t command;
+  30            uint8_t command_arg_count;
+  31            uint8_t (*command_handler)(uint8_t* info_bytes);
+  32            uint8_t end_of_communication;
+  33          } command_table_element;
+  34          
+  35          
+  36          uint8_t empty_command(uint8_t* command_args_send_info_bytes)
+  37          {
+  38   1        command_args_send_info_bytes[0] = SUCCESSFUL;
+  39   1        return 1;
+  40   1      }
+  41          
+  42          command_table_element xdata command_table[NUMBER_OF_COMMANDS] = {
+  43              // Command name,  number of arguments, command_handler
+  44              {CM_NONE,         0,                   &empty_command,        true},
+  45              {CM_LIGHTNESS,   1,                   &set_lightness_command, false},
+  46              {CM_DISCONNECT,         0,                   &empty_command, true},
+  47              {CM_GET_DATETIME,         0,                   &get_datetime_command, true},
+  48              {CM_SET_DATETIME,         6,                   &set_datetime_command, true},
+  49              {CM_GET_SUNRISETIME,         0,                   &get_sunrise_time_command, true}
+  50          };
+C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   03/04/2023 16:53:23 PAGE 2   
 
-  49   1      
-  50   1        // Command opcode
-  51   1        uint8_t command;
-  52   1      
-  53   1        // Make a copy of in_packet's info field into received_info_bytes
-  54   1        hdlc_l_load_received_info_bytes(received_info_bytes, &received_info_bytes_size);
-  55   1      
-  56   1        // Error: No command
-  57   1        if (received_info_bytes_size == 0){
-  58   2            send_info_bytes[0] = NO_COMMAND;
-  59   2            send_info_bytes_size = 1;
-  60   2        }
-  61   1        else{
-  62   2            command = received_info_bytes[0];
-  63   2      
-  64   2            // Error: Unknown command
-  65   2            if (command >= NUMBER_OF_COMMANDS){
-  66   3                send_info_bytes[0] = UNKNOWN_COMMAND;
-  67   3                send_info_bytes_size = 1;
-  68   3            }
-  69   2      
-  70   2            // Error: Incorrect number of arguments for command
-  71   2            else if (command_table[command].command_arg_count != received_info_bytes_size - 1){
-  72   3                send_info_bytes[0] = INCORRECT_NUMBER_OF_ARGUMENTS;
-  73   3                send_info_bytes_size = 1;
-  74   3            }
-  75   2      
-  76   2             // Get command handler of the command and pass to it the arguments
-  77   2            // which are the next bytes in the packet
-  78   2            else{
-  79   3                send_info_bytes[0] = (command_table[command].command_handler)(&(received_info_bytes[1]));
-  80   3                send_info_bytes_size = 1;
-  81   3            }
+  51          
+  52          
+  53          void uart_command_handler(){
+  54   1        command_handler();
+  55   1      }
+  56          
+  57          
+  58          void antenna_command_handler(){
+  59   1        command_handler();
+  60   1      }
+  61          
+  62          // Command from computer
+  63          uint8_t xdata info_bytes[10];
+  64          void command_handler(){
+  65   1      
+  66   1        // received_info_bytes's size
+  67   1        uint8_t info_bytes_size;
+  68   1      
+  69   1        // Command opcode
+  70   1        uint8_t command;
+  71   1      
+  72   1        // Whether communication is going to end after this command
+  73   1        bool end_of_communication = true;
+  74   1      
+  75   1        // Make a copy of in_packet's info field into received_info_bytes
+  76   1        hdlc_l_load_received_info_bytes(info_bytes, &info_bytes_size);
+  77   1      
+  78   1        // Error: No command
+  79   1        if (info_bytes_size == 0){
+  80   2            info_bytes[0] = NO_COMMAND;
+  81   2            info_bytes_size = 1;
   82   2        }
-  83   1      
-  84   1        // Send packet
-  85   1        hdlc_l_send_info_packet(send_info_bytes, send_info_bytes_size);
-  86   1      
-  87   1        // Re-enable UART0 so transmission starts
-  88   1        IE |= IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
-  89   1      }
+  83   1        else{
+  84   2            command = info_bytes[0];
+  85   2      
+  86   2            // Error: Unknown command
+  87   2            if (command >= NUMBER_OF_COMMANDS){
+  88   3                info_bytes[0] = UNKNOWN_COMMAND;
+  89   3                info_bytes_size = 1;
+  90   3            }
+  91   2      
+  92   2            // Error: Incorrect number of arguments for command
+  93   2            else if (command_table[command].command_arg_count != info_bytes_size - 1){
+  94   3                info_bytes[0] = INCORRECT_NUMBER_OF_ARGUMENTS;
+  95   3                info_bytes_size = 1;
+  96   3            }
+  97   2      
+  98   2             // Get command handler of the command and pass to it the arguments
+  99   2            // which are the next bytes in the packet
+ 100   2            else{
+ 101   3                end_of_communication = command_table[command].end_of_communication;
+ 102   3                info_bytes_size = command_table[command].command_handler(&info_bytes[0]);
+ 103   3            }
+ 104   2        }
+ 105   1      
+ 106   1        if(end_of_communication)
+ 107   1          event_queue_add_event(EV_UART_DONE);
+ 108   1      
+ 109   1      
+ 110   1        // Send packet
+ 111   1        hdlc_l_send_info_packet(info_bytes, info_bytes_size);
+ 112   1      
+ 113   1        // Re-enable UART0 so transmission starts
+C51 COMPILER V9.60.0.0   COMMAND_HANDLER                                                   03/04/2023 16:53:23 PAGE 3   
+
+ 114   1        IE |= IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
+ 115   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    124    ----
+   CODE SIZE        =    173    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----    ----
+   XDATA SIZE       =     46    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     10      25
+   DATA SIZE        =   ----       1
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =   ----    ----
+   BIT SIZE         =   ----       1
    EDATA SIZE       =   ----    ----
    HDATA SIZE       =   ----    ----
    XDATA CONST SIZE =   ----    ----
@@ -123,4 +149,4 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

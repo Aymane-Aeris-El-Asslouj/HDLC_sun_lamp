@@ -293,8 +293,11 @@ SI_INTERRUPT (UART0_ISR, UART0_IRQn)
                   // and disable UART0 interrupt to avoid modifying in_packet or using out_packet
                   // while the main state machine is modifying them
                   else{
-                      IE &= ~IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
-                      current_event = EV_COMMAND;
+                      if(event_queue_is_not_full())
+                        {
+                          IE &= ~IE_ES0__BMASK; // IE is on all SFR pages, so no need to change the SFR page
+                          event_queue_add_event(EV_UART_COMMAND);
+                        }
                   }
               }
 

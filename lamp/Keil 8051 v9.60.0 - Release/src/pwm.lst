@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 1   
+C51 COMPILER V9.60.0.0   PWM                                                               03/04/2023 16:50:27 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE PWM
@@ -63,7 +63,7 @@ line level    source
   48          Inverted, yields:
   49          
   50          Y = L/9.033                   L < 0.08
-C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 2   
+C51 COMPILER V9.60.0.0   PWM                                                               03/04/2023 16:50:27 PAGE 2   
 
   51          Y = ((L+0.16)/1.16)^3         else
   52          
@@ -97,61 +97,67 @@ line level    source
   70              44474,44987,45505,46026,46551,47080,47613,48150,48691,49236,49785,50339,50896,51457,52023,52593,53166,
              -53744,54327,54913,
   71              55503,56098,56697,57300,57908,58520,59136,59756,60381,61010,61643,62281,62923,63570,64221,65535};
-  72          uint8_t dummy = 1;
-  73          uint8_t current_lightness = 0;
-  74          void button(){
-  75   1        if ((P3 & P3_B0__BMASK) != P3_B0__BMASK){
-  76   2          if (dummy == 0){
-  77   3              dummy = 1;
-  78   3              current_lightness = 255;
-  79   3          }
-  80   2          else{
-  81   3              dummy = 0;
-  82   3              current_lightness = 0;
-  83   3          }
-  84   2          update_pwm();
-  85   2        }
-  86   1      
-  87   1      }
-  88          
-  89          void increase_lightness(){
-  90   1      
-  91   1          if(current_lightness ==254){
-  92   2              current_event = EV_STARTED;
-  93   2              return;
-  94   2          }
-  95   1          current_lightness += 2;
-  96   1      }
+  72          uint8_t current_lightness = 0;
+  73          
+  74          
+  75          // Raise and lower lightness during start up
+  76          bool lightness_start_pattern_part = 0;
+  77          void lightness_start_pattern(){
+  78   1      
+  79   1          if(lightness_start_pattern_part == 0)
+  80   1            {
+  81   2              current_lightness ++;
+  82   2              if(current_lightness ==255){
+  83   3                  lightness_start_pattern_part = 1;
+  84   3              }
+  85   2            }
+  86   1          else
+  87   1            {
+  88   2              current_lightness --;
+  89   2              if(current_lightness ==0){
+  90   3                  event_queue_add_event(EV_STARTED);
+  91   3                  return;
+  92   3              }
+  93   2            }
+  94   1          update_pwm();
+  95   1      }
+  96          
   97          
   98          
-  99          void set_lightness(uint8_t lightness){
- 100   1        current_lightness = lightness;
- 101   1        update_pwm();
+  99          void set_error_LED(bool state)
+ 100          {
+ 101   1        P2_B6 = state;
  102   1      }
-C51 COMPILER V9.60.0.0   PWM                                                               02/27/2023 00:24:44 PAGE 3   
+C51 COMPILER V9.60.0.0   PWM                                                               03/04/2023 16:50:27 PAGE 3   
 
  103          
- 104          uint8_t set_lightness_command(uint8_t* args){
- 105   1        current_lightness = args[0];
+ 104          void set_lightness(uint8_t lightness){
+ 105   1        current_lightness = lightness;
  106   1        update_pwm();
- 107   1        return SUCCESSFUL;
- 108   1      }
- 109          
- 110          void update_pwm(){
- 111   1        uint16_t pwm;
- 112   1        pwm = pwm_from_lightness[current_lightness]/10;
- 113   1        pwm_set(pwm + 150, pwm + 150);
+ 107   1      }
+ 108          
+ 109          uint8_t set_lightness_command(uint8_t* info_bytes){
+ 110   1        current_lightness = info_bytes[1];
+ 111   1        update_pwm();
+ 112   1        info_bytes[0] = SUCCESSFUL;
+ 113   1        return 1;
  114   1      }
+ 115          
+ 116          void update_pwm(){
+ 117   1        uint16_t pwm;
+ 118   1        pwm = pwm_from_lightness[current_lightness]/10;
+ 119   1        pwm_set(pwm + 150, pwm + 150);
+ 120   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    133    ----
+   CODE SIZE        =    142    ----
    CONSTANT SIZE    =    512    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      2    ----
+   DATA SIZE        =      1       3
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =   ----    ----
+   BIT SIZE         =      1       1
    EDATA SIZE       =   ----    ----
    HDATA SIZE       =   ----    ----
    XDATA CONST SIZE =   ----    ----

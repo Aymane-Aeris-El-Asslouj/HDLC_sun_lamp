@@ -69,42 +69,48 @@ uint16_t code pwm_from_lightness[256] = {1,28,57,85,113,142,170,198,227,255,283,
     35012,35450,35891,36336,36785,37237,37693,38153,38617,39084,39555,40030,40508,40990,41477,41966,42460,42958,43459,43965,
     44474,44987,45505,46026,46551,47080,47613,48150,48691,49236,49785,50339,50896,51457,52023,52593,53166,53744,54327,54913,
     55503,56098,56697,57300,57908,58520,59136,59756,60381,61010,61643,62281,62923,63570,64221,65535};
-uint8_t dummy = 1;
 uint8_t current_lightness = 0;
-void button(){
-  if ((P3 & P3_B0__BMASK) != P3_B0__BMASK){
-    if (dummy == 0){
-        dummy = 1;
-        current_lightness = 255;
-    }
-    else{
-        dummy = 0;
-        current_lightness = 0;
-    }
+
+
+// Raise and lower lightness during start up
+bool lightness_start_pattern_part = 0;
+void lightness_start_pattern(){
+
+    if(lightness_start_pattern_part == 0)
+      {
+        current_lightness ++;
+        if(current_lightness ==255){
+            lightness_start_pattern_part = 1;
+        }
+      }
+    else
+      {
+        current_lightness --;
+        if(current_lightness ==0){
+            event_queue_add_event(EV_STARTED);
+            return;
+        }
+      }
     update_pwm();
-  }
-
 }
 
-void increase_lightness(){
 
-    if(current_lightness ==254){
-        current_event = EV_STARTED;
-        return;
-    }
-    current_lightness += 2;
+
+void set_error_LED(bool state)
+{
+  P2_B6 = state;
 }
-
 
 void set_lightness(uint8_t lightness){
   current_lightness = lightness;
   update_pwm();
 }
 
-uint8_t set_lightness_command(uint8_t* args){
-  current_lightness = args[0];
+uint8_t set_lightness_command(uint8_t* info_bytes){
+  current_lightness = info_bytes[1];
   update_pwm();
-  return SUCCESSFUL;
+  info_bytes[0] = SUCCESSFUL;
+  return 1;
 }
 
 void update_pwm(){

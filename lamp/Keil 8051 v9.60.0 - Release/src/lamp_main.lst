@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 07:49:15 PAGE 1   
+C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         03/04/2023 16:53:23 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE LAMP_MAIN
@@ -63,7 +63,7 @@ line level    source
   48   1        enter_DefaultMode_from_RESET ();
   49   1      
   50   1        // Set all the button pins high.
-C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         02/27/2023 07:49:15 PAGE 2   
+C51 COMPILER V9.60.0.0   LAMP_MAIN                                                         03/04/2023 16:53:23 PAGE 2   
 
   51   1        // Because the pins are configured as open-drain, setting them high disables
   52   1        // their MOSFETs (which would otherwise pull down against their internal
@@ -78,19 +78,17 @@ line level    source
   61   1      
   62   1        read_time_from_RTC();
   63   1      
-  64   1        //upload_time_to_RTC();
-  65   1      
-  66   1        // Main loop
-  67   1        while (1){
-  68   2            // $[Generated Run-time code]
-  69   2            // [Generated Run-time code]$
-  70   2      
-  71   2            // Fetch current event, run the state machine, and delay
-  72   2            event = fetch_event();
-  73   2            state_machine_run_iteration(event);
-  74   2            timer_4_delay_ms(STATE_MACHINE_PERIOD);
-  75   2          }
-  76   1      }
+  64   1        // Main loop
+  65   1        while (1){
+  66   2            // $[Generated Run-time code]
+  67   2            // [Generated Run-time code]$
+  68   2      
+  69   2            // Fetch current event, run the state machine, and delay
+  70   2            event = fetch_event();
+  71   2            state_machine_run_iteration(event);
+  72   2            timer_4_delay_ms(STATE_MACHINE_PERIOD);
+  73   2          }
+  74   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

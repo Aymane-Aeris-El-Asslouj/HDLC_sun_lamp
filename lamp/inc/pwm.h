@@ -18,13 +18,13 @@
 // ----------------------------------------------------------------------------
 void pwm_set(uint16_t channel0, uint16_t channel1);
 
-void button();
-
-void increase_lightness();
+void lightness_start_pattern();
 
 void set_lightness(uint8_t lightness);
 
-uint8_t set_lightness_command(uint8_t* args);
+uint8_t set_lightness_command(uint8_t* command_args_send_info_bytes);
+
+void set_error_LED(bool state);
 
 void update_pwm();
 

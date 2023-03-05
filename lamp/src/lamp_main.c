@@ -61,8 +61,6 @@ int main(void) {
 
   read_time_from_RTC();
 
-  //upload_time_to_RTC();
-
   // Main loop
   while (1){
       // $[Generated Run-time code]

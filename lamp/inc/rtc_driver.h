@@ -56,5 +56,10 @@ void rtc_reset();
 void upload_time_to_RTC();
 void read_time_from_RTC();
 bool is_time_valid();
+void clock_tick();
+uint8_t get_datetime_command(uint8_t* info_bytes);
+uint8_t set_datetime_command(uint8_t* info_bytes);
+uint8_t get_sunrise_time_command(uint8_t* info_bytes);
+
 
 #endif /* INC_RTC_DRIVER_H_ */

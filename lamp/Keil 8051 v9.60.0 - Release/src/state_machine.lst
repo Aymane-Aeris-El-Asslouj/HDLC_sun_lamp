@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   STATE_MACHINE                                                     02/27/2023 00:24:44 PAGE 1   
+C51 COMPILER V9.60.0.0   STATE_MACHINE                                                     03/04/2023 16:53:23 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE STATE_MACHINE
@@ -15,77 +15,109 @@ line level    source
 
    1          #include "state_machine.h"
    2          #include "pwm.h"
-   3          #include "command_handler.h"
-   4          
-   5          #include <SI_EFM8BB52_Register_Enums.h>                  // SFR declarations
-   6          
-   7          // List of state of the state machine
-   8          typedef enum{
-   9            ST_INIT, ST_START, ST_IDLE, ST_DEBOUNCE, ST_BUTTON,
-  10          } state_t;
-  11          
-  12          // Meely state machine transition table element. Events trigger state transition
-  13          // accompanied by an event handler function.
-  14          typedef struct {
-  15              state_t current_state;
-  16              event_t event;
-  17              state_t next_state;
-  18              void (*event_handler)(void);
-  19          } stateTransMatrixRow_t;
-  20          
-  21          // Meely state machine transition table. A single transition happens per cycle, so
-  22          // event transitions are ordered by priority up to down. EV_ANY is the wildcard
-  23          // event which always triggers, so it should be at the lowest priority.
-  24          void empty(){}
-  25          stateTransMatrixRow_t stateTransMatrix[] = {
-  26              { ST_INIT,     EV_ANY,               ST_START,     &empty},
-  27              { ST_START,    EV_STARTED,           ST_IDLE,      &empty},
-  28              { ST_START,    EV_ANY,               ST_START,     &increase_lightness},
-  29              { ST_IDLE,     EV_COMMAND,           ST_IDLE,      &command_handler},
-  30              { ST_IDLE,     EV_BUTTON_PUSHED,     ST_DEBOUNCE,  &empty},
-  31              { ST_DEBOUNCE, EV_ANY,               ST_IDLE,      &button}
-  32          };
-  33          
-  34          // Single iteration of the state machine system with up to one transition.
-  35          state_t current_state;
-  36          void state_machine_run_iteration(event_t event) {
-  37   1        int i;
-  38   1        // Iterate through the state transition table
-  39   1        for(i = 0; i < sizeof(stateTransMatrix)/sizeof(stateTransMatrix[0]); i++) {
-  40   2         // Look for a transition with the current state and event
-  41   2          if(stateTransMatrix[i].current_state == current_state) {
-  42   3                  if((stateTransMatrix[i].event == event) || (stateTransMatrix[i].event == EV_ANY)) {
-  43   4      
-  44   4                      // Transition to the next state
-  45   4                      current_state =  stateTransMatrix[i].next_state;
-  46   4      
-  47   4                      // Call the function associated with transition
-  48   4                      stateTransMatrix[i].event_handler();
-  49   4      
-  50   4                      // break so no more transitions happen till the next cycle
-C51 COMPILER V9.60.0.0   STATE_MACHINE                                                     02/27/2023 00:24:44 PAGE 2   
+   3          #include "rtc_driver.h"
+   4          #include "command_handler.h"
+   5          
+   6          #include <SI_EFM8BB52_Register_Enums.h>                  // SFR declarations
+   7          
+   8          // List of state of the state machine
+   9          typedef enum{
+  10            ST_INIT, ST_START, ST_IDLE, ST_UART, ST_ANTENNA,
+  11          } state_t;
+  12          
+  13          // Meely state machine transition table element. Events trigger state transition
+  14          // accompanied by an event handler function.
+  15          typedef struct {
+  16              state_t current_state;
+  17              event_t event;
+  18              state_t next_state;
+  19              void (*event_handler)(void);
+  20          } stateTransMatrixRow_t;
+  21          
+  22          // Meely state machine transition table. A single transition happens per cycle, so
+  23          // event transitions are ordered by priority up to down. EV_ANY is the wildcard
+  24          // event which always triggers, so it should be at the lowest priority.
+  25          void empty(){}
+  26          stateTransMatrixRow_t xdata stateTransMatrix[] = {
+  27              { ST_INIT,     EV_ANY,               ST_START,     &empty},
+  28              { ST_START,    EV_STARTED,           ST_IDLE,      &empty},
+  29              { ST_START,    EV_ANY,               ST_START,     &lightness_start_pattern},
+  30              { ST_IDLE,     EV_UART_COMMAND,           ST_UART,      &uart_command_handler},
+  31              { ST_UART,     EV_UART_COMMAND,           ST_UART,      &uart_command_handler},
+  32              { ST_UART,     EV_UART_DONE,           ST_IDLE,      &empty},
+  33              { ST_IDLE,     EV_ANTENNA_COMMAND,        ST_ANTENNA,      &antenna_command_handler},
+  34              { ST_ANTENNA,     EV_ANTENNA_COMMAND,        ST_ANTENNA,      &antenna_command_handler},
+  35              { ST_ANTENNA,     EV_ANTENNA_DONE,           ST_IDLE,      &empty},
+  36              { ST_IDLE,     EV_CLOCK_TICK,           ST_IDLE,      &clock_tick},
+  37          };
+  38          
+  39          // Single iteration of the state machine system with up to one transition.
+  40          state_t xdata current_state = ST_INIT;
+  41          void state_machine_run_iteration(event_t event) {
+  42   1        int i;
+  43   1        // Iterate through the state transition table
+  44   1        for(i = 0; i < sizeof(stateTransMatrix)/sizeof(stateTransMatrix[0]); i++) {
+  45   2         // Look for a transition with the current state and event
+  46   2          if(stateTransMatrix[i].current_state == current_state) {
+  47   3                  if((stateTransMatrix[i].event == event) || (stateTransMatrix[i].event == EV_ANY)) {
+  48   4      
+  49   4                      // Transition to the next state
+  50   4                      current_state =  stateTransMatrix[i].next_state;
+C51 COMPILER V9.60.0.0   STATE_MACHINE                                                     03/04/2023 16:53:23 PAGE 2   
 
-  51   4                      break;
-  52   4                  }
-  53   3              }
-  54   2          }
-  55   1      }
-  56          
-  57          // Fetch current event and remove it (consumes current event)
-  58          event_t current_event = EV_NONE;
-  59          event_t fetch_event(){
-  60   1          event_t event = current_event;
-  61   1          current_event = EV_NONE;
-  62   1          return event;
-  63   1      }
+  51   4      
+  52   4                      // Call the function associated with transition
+  53   4                      stateTransMatrix[i].event_handler();
+  54   4      
+  55   4                      // break so no more transitions happen till the next cycle
+  56   4                      break;
+  57   4                  }
+  58   3              }
+  59   2          }
+  60   1      }
+  61          
+  62          
+  63          uint8_t xdata event_queue_size = 0;
+  64          event_t xdata event_queue[EVENT_QUEUE_SIZE];
+  65          
+  66          bool event_queue_is_not_full(){
+  67   1        return event_queue_size != EVENT_QUEUE_SIZE;
+  68   1      }
+  69          
+  70          void event_queue_add_event(event_t event){
+  71   1        if(event_queue_is_not_full()){
+  72   2            event_queue[event_queue_size] = event;
+  73   2            event_queue_size++;
+  74   2        }
+  75   1      }
+  76          
+  77          
+  78          // Pop event from queue
+  79          event_t fetch_event(){
+  80   1        int i;
+  81   1        event_t fetched_event;
+  82   1          if (event_queue_size > 0)
+  83   1            {
+  84   2              fetched_event = event_queue[0];
+  85   2      
+  86   2              for (i = 0; i < event_queue_size-1; i++)
+  87   2                event_queue[i] = event_queue[i+1];
+  88   2      
+  89   2              event_queue_size--;
+  90   2      
+  91   2              return fetched_event;
+  92   2            }
+  93   1          else
+  94   1            return EV_NONE;
+  95   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     96    ----
+   CODE SIZE        =    229    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----    ----
+   XDATA SIZE       =     72    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     38       3
+   DATA SIZE        =   ----       3
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

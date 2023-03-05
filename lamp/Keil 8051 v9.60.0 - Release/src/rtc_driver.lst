@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        02/27/2023 07:49:15 PAGE 1   
+C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        03/04/2023 17:14:44 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE RTC_DRIVER
@@ -15,196 +15,290 @@ line level    source
 
    1          
    2          #include <SI_EFM8BB52_Register_Enums.h>
-   3          #include "smb_0.h"
-   4          #include "rtc_driver.h"
-   5          
-   6          
-   7          
-   8          static SI_SEGMENT_VARIABLE(rtc_send_buffer[RTC_SEND_BUFFER_SIZE], uint8_t, SI_SEG_XDATA);
-   9          static SI_SEGMENT_VARIABLE(rtc_receive_buffer[RTC_RECEIVE_BUFFER_SIZE], uint8_t, SI_SEG_XDATA);
-  10          
+   3          #include <math.h>
+   4          #include "smb_0.h"
+   5          #include "rtc_driver.h"
+   6          #include "pwm.h"
+   7          #include "state_machine.h"
+   8          #include "command_handler.h"
+   9          
+  10          #define M_PI 3.1415926535897f
   11          
-  12          // datetime struct
-  13          static xdata rtc_time_data rtc_data;
+  12          static SI_SEGMENT_VARIABLE(rtc_send_buffer[RTC_SEND_BUFFER_SIZE], uint8_t, SI_SEG_XDATA);
+  13          static SI_SEGMENT_VARIABLE(rtc_receive_buffer[RTC_RECEIVE_BUFFER_SIZE], uint8_t, SI_SEG_XDATA);
   14          
-  15          // Flag to indicate end of RTC transfer
-  16          bool transfer_complete = false;
-  17          
-  18          // Communication with RTC done
-  19          void SMB0_transferCompleteCb()
-  20          {
-  21   1        transfer_complete = true;
-  22   1      }
+  15          
+  16          // datetime struct
+  17          static xdata rtc_time_data rtc_data;
+  18          
+  19          // Flag to indicate end of RTC transfer
+  20          bool transfer_complete = false;
+  21          
+  22          
   23          
-  24          // Error during communication with RTC
-  25          void SMB0_errorCb(SMB0_TransferError_t error){
-  26   1        // Disable state machine and put lamp in red (to be implemented later)
-  27   1      }
-*** WARNING C280 IN LINE 25 OF C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\src\rtc_driver.c: 'error': unreferenc
+  24          // Communication with RTC done
+  25          void SMB0_transferCompleteCb()
+  26          {
+  27   1        transfer_complete = true;
+  28   1      }
+  29          
+  30          // Error during communication with RTC
+  31          void SMB0_errorCb(SMB0_TransferError_t error)
+  32          {
+  33   1        // Disable state machine and put lamp in red (to be implemented later)
+  34   1      }
+*** WARNING C280 IN LINE 31 OF C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\src\rtc_driver.c: 'error': unreferenc
              -ed local variable
-  28          
-  29          // For slave transmission (irrelevant as chip is master-only)
-  30          void SMB0_commandReceivedCb(){
-  31   1      
-  32   1      }
-  33          
-  34          // Send clock pulses to the RTC module to reset its i2c interface
-  35          void rtc_reset(){
-  36   1        uint8_t i;
-  37   1        // Disable SMB0's access to the pins
-  38   1        XBR2 &= ~XBR2_XBARE__BMASK; // disable crossbar
-  39   1        SCL_PnSKIP |= SCL_PnSKIP_Bm__BMASK; // skip SCL pin
-  40   1        SDA_PnSKIP |= SDA_PnSKIP_Bm__BMASK; // skip SDA pin
-  41   1        SCL_PnMDIN |= SCL_PnMDIN_Bm__BMASK; // put SCL pin into digital mode
-  42   1        SDA_PnMDIN |= SDA_PnMDIN_Bm__BMASK; // put SDA pin into digital mode
-  43   1        XBR0 &= ~XBR0_SMB0E__BMASK; // Disable SMB0 crossbar access
-  44   1        XBR2 |= XBR2_XBARE__BMASK; // enable crossbar
-  45   1      
-  46   1        // Send clock pulses till the SDA line is allowed to go up
-  47   1        while(!SDA_PnBm){
-  48   2            SCL_PnBm = 0;
-C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        02/27/2023 07:49:15 PAGE 2   
+  35          
+  36          // For slave transmission (irrelevant as chip is master-only)
+  37          void SMB0_commandReceivedCb()
+  38          {
+  39   1      
+  40   1      }
+  41          
+  42          // Send clock pulses to the RTC module to reset its i2c interface
+  43          void rtc_reset()
+  44          {
+  45   1        uint8_t i;
+  46   1        // Disable SMB0's access to the pins
+  47   1        XBR2 &= ~XBR2_XBARE__BMASK; // disable crossbar
+  48   1        SCL_PnSKIP |= SCL_PnSKIP_Bm__BMASK; // skip SCL pin
+C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        03/04/2023 17:14:44 PAGE 2   
 
-  49   2            for(i=0; i < 0xFF; i++);
-  50   2            SCL_PnBm = 1;
-  51   2            for(i=0; i < 0xFF; i++);
-  52   2        }
-  53   1        // Reenable SMB0's access to the pins
-  54   1        XBR2 &= ~XBR2_XBARE__BMASK; // disable crossbar
-  55   1        SCL_PnSKIP &= ~SCL_PnSKIP_Bm__BMASK; // unskip SCL pin
-  56   1        SDA_PnSKIP &= ~SDA_PnSKIP_Bm__BMASK; // unskip SDA pin
-  57   1        XBR0 |= XBR0_SMB0E__BMASK; // enable SMB0 crossbar access
-  58   1        XBR2 |= XBR2_XBARE__BMASK; // enable crossbar
-  59   1      }
-  60          
-  61          
-  62          
-  63          // Convert 8-bit binary numbers from bcd to hex format
-  64          static uint8_t BCD_to_HEX(uint8_t number)
-  65          {
-  66   1        return (number / 0x10) *10  + (number % 0x10);
-  67   1      }
-  68          
-  69          // Convert 8-bit binary numbers from bcd to hex format
-  70          static uint8_t HEX_TO_BCD(uint8_t number)
-  71          {
-  72   1        return (number/10)*0x10 + (number % 10);
-  73   1      }
+  49   1        SDA_PnSKIP |= SDA_PnSKIP_Bm__BMASK; // skip SDA pin
+  50   1        SCL_PnMDIN |= SCL_PnMDIN_Bm__BMASK; // put SCL pin into digital mode
+  51   1        SDA_PnMDIN |= SDA_PnMDIN_Bm__BMASK; // put SDA pin into digital mode
+  52   1        XBR0 &= ~XBR0_SMB0E__BMASK; // Disable SMB0 crossbar access
+  53   1        XBR2 |= XBR2_XBARE__BMASK; // enable crossbar
+  54   1      
+  55   1        // Send clock pulses till the SDA line is allowed to go up
+  56   1        while(!SDA_PnBm){
+  57   2            SCL_PnBm = 0;
+  58   2            for(i=0; i < 0xFF; i++);
+  59   2            SCL_PnBm = 1;
+  60   2            for(i=0; i < 0xFF; i++);
+  61   2        }
+  62   1        // Reenable SMB0's access to the pins
+  63   1        XBR2 &= ~XBR2_XBARE__BMASK; // disable crossbar
+  64   1        SCL_PnSKIP &= ~SCL_PnSKIP_Bm__BMASK; // unskip SCL pin
+  65   1        SDA_PnSKIP &= ~SDA_PnSKIP_Bm__BMASK; // unskip SDA pin
+  66   1        XBR0 |= XBR0_SMB0E__BMASK; // enable SMB0 crossbar access
+  67   1        XBR2 |= XBR2_XBARE__BMASK; // enable crossbar
+  68   1      }
+  69          
+  70          
+  71          
+  72          
+  73          uint8_t code days_per_month[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
   74          
-  75          void upload_time_to_RTC(){
-  76   1        uint8_t i;
-  77   1      
-  78   1        // Clear send buffer
-  79   1        for(i = 0; i < RTC_SEND_BUFFER_SIZE; i++)
-  80   1            rtc_send_buffer[i] = 0;
-  81   1      
-  82   1      
-  83   1        // Write date-time to RTC send buffer
-  84   1        rtc_send_buffer[0] = 0x00; // Target starting register address
-  85   1        rtc_send_buffer[RTC_SECONDS_REG+1] = HEX_TO_BCD(rtc_data.seconds);
-  86   1        rtc_send_buffer[RTC_MINUTES_REG+1] = HEX_TO_BCD(rtc_data.minutes);
-  87   1        rtc_send_buffer[RTC_HOURS_REG+1] = HEX_TO_BCD(rtc_data.hours);
-  88   1        rtc_send_buffer[RTC_DATE_REG+1] = HEX_TO_BCD(rtc_data.date);
-  89   1        rtc_send_buffer[RTC_MONTH_REG+1] = HEX_TO_BCD(rtc_data.month);
-  90   1        rtc_send_buffer[RTC_YEAR_REG+1] = HEX_TO_BCD(rtc_data.year);
-  91   1        // Alarm and day of week registers are set to 0x00 as they are irrelevant
-  92   1        // Control register is set to 0x00 for 1Hz cycle on SQW pin
-  93   1        // Status register is set to 0x00 to clear OSF bit
-  94   1        // Aging offset register is set to 0x00 to have normal operation
-  95   1      
-  96   1        // Write send buffer to RTC module
-  97   1        transfer_complete = false;
-  98   1        SMB0_transfer(RTC_DEVICE_ADDRESS << 1, rtc_send_buffer, NULL, RTC_SEND_BUFFER_SIZE, 0);
-  99   1      
- 100   1        // Wait for transfer to end
- 101   1        while(!transfer_complete);
- 102   1      }
- 103          
- 104          
- 105          void read_time_from_RTC(){
- 106   1        uint8_t pm;
- 107   1      
- 108   1      
- 109   1        // Read data from RTC module
- 110   1        transfer_complete = false;
- 111   1        rtc_send_buffer[0] = 0x00;
-C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        02/27/2023 07:49:15 PAGE 3   
+  75          static uint8_t days_of_month(uint8_t month, uint8_t year)
+  76          {
+  77   1        // If February and leap year, add one day to standard days of month
+  78   1        if((month == 2) && (year % 4 == 0))
+  79   1          return days_per_month[month-1]+1;
+  80   1      
+  81   1        return days_per_month[month-1];
+  82   1      }
+  83          
+  84          
+  85          // Convert 8-bit binary numbers from bcd to hex format
+  86          static uint8_t BCD_to_HEX(uint8_t number)
+  87          {
+  88   1        return (number / 0x10) *10  + (number % 0x10);
+  89   1      }
+  90          
+  91          // Convert 8-bit binary numbers from bcd to hex format
+  92          static uint8_t HEX_TO_BCD(uint8_t number)
+  93          {
+  94   1        return (number/10)*0x10 + (number % 10);
+  95   1      }
+  96          
+  97          // hours as a function of day
+  98          double xdata sunrise_time;
+  99          double xdata latitude = 30.266666;
+ 100          void update_sunrise_time()
+ 101          {
+ 102   1        uint8_t day = rtc_data.date;
+ 103   1        double lat = latitude * M_PI/180;
+ 104   1        double delta;
+ 105   1        uint8_t i;
+ 106   1      
+ 107   1        for (i = 1; i < rtc_data.month; i++)
+ 108   1          day += days_of_month(i, rtc_data.year);
+ 109   1      
+ 110   1        delta = -23.44*cos((2*M_PI/365)*(day - 1 - 10))*(M_PI/180);
+ 111   1        sunrise_time = -12.f*acos(-tan(lat)*tan(delta))/M_PI+12.f;
+C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        03/04/2023 17:14:44 PAGE 3   
 
- 112   1        SMB0_transfer(RTC_DEVICE_ADDRESS << 1, rtc_send_buffer, rtc_receive_buffer, 1, RTC_RECEIVE_BUFFER_SIZE);
- 113   1      
- 114   1        // Wait for transfer to end
- 115   1        while(!transfer_complete);
- 116   1      
- 117   1        rtc_data.seconds = BCD_to_HEX(rtc_receive_buffer[RTC_SECONDS_REG]);
- 118   1        rtc_data.minutes = BCD_to_HEX(rtc_receive_buffer[RTC_MINUTES_REG]);
- 119   1        rtc_data.hours = BCD_to_HEX(rtc_receive_buffer[RTC_HOURS_REG]);
- 120   1        rtc_data.date = BCD_to_HEX(rtc_receive_buffer[RTC_DATE_REG]);
- 121   1        rtc_data.month = BCD_to_HEX(rtc_receive_buffer[RTC_MONTH_REG]);
- 122   1        rtc_data.year = BCD_to_HEX(rtc_receive_buffer[RTC_YEAR_REG]);
- 123   1        rtc_data.invalid = rtc_receive_buffer[RTC_STATUS_REG] >> RTC_STATUS_REG_OSF__SHIFT;
- 124   1      
- 125   1        // If time is valid, enable SQW INT0 interrupt to keep up with time
- 126   1        IE_EX0 = is_time_valid();
- 127   1      }
-*** WARNING C280 IN LINE 106 OF C:\Users\elass\SimplicityStudio\v5_workspace\lamp_2\src\rtc_driver.c: 'pm': unreferenced
-             - local variable
- 128          
- 129          uint8_t code days_per_month[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
- 130          
- 131          static uint8_t days_of_month()
- 132          {
- 133   1        // If February and leap year, add one day to standard days of month
- 134   1        if((rtc_data.month == 2) && (rtc_data.year % 4 == 0))
- 135   1          return days_per_month[rtc_data.month-1]+1;
- 136   1      
- 137   1        return days_per_month[rtc_data.month-1];
- 138   1      }
- 139          
- 140          
- 141          bool is_time_valid(){
- 142   1        return !rtc_data.invalid;
- 143   1      }
- 144          
- 145          // SQW 1 Hz interrupt from RTC module to update datetime
- 146          SI_INTERRUPT (INT0_ISR, INT0_IRQn)
- 147            {
- 148   1          // Blink led (for visual debugging purposes, will be removed)
- 149   1          P1_B4 = !P1_B4;
- 150   1      
- 151   1          // Update datetime (trickle down modification)
+ 112   1      }
+ 113          
+ 114          void upload_time_to_RTC()
+ 115          {
+ 116   1        uint8_t i;
+ 117   1      
+ 118   1        // Uploading to RTC means data is now valid
+ 119   1        rtc_data.invalid = false;
+ 120   1        set_error_LED(rtc_data.invalid);
+ 121   1        update_sunrise_time();
+ 122   1      
+ 123   1        // Clear send buffer
+ 124   1        for(i = 0; i < RTC_SEND_BUFFER_SIZE; i++)
+ 125   1            rtc_send_buffer[i] = 0;
+ 126   1      
+ 127   1      
+ 128   1        // Write date-time to RTC send buffer
+ 129   1        rtc_send_buffer[0] = 0x00; // Target starting register address
+ 130   1        rtc_send_buffer[RTC_SECONDS_REG+1] = HEX_TO_BCD(rtc_data.seconds);
+ 131   1        rtc_send_buffer[RTC_MINUTES_REG+1] = HEX_TO_BCD(rtc_data.minutes);
+ 132   1        rtc_send_buffer[RTC_HOURS_REG+1] = HEX_TO_BCD(rtc_data.hours);
+ 133   1        rtc_send_buffer[RTC_DATE_REG+1] = HEX_TO_BCD(rtc_data.date);
+ 134   1        rtc_send_buffer[RTC_MONTH_REG+1] = HEX_TO_BCD(rtc_data.month);
+ 135   1        rtc_send_buffer[RTC_YEAR_REG+1] = HEX_TO_BCD(rtc_data.year);
+ 136   1        // Alarm and day of week registers are set to 0x00 as they are irrelevant
+ 137   1        // Control register is set to 0x00 for 1Hz cycle on SQW pin
+ 138   1        // Status register is set to 0x00 to clear OSF bit
+ 139   1        // Aging offset register is set to 0x00 to have normal operation
+ 140   1      
+ 141   1        // Write send buffer to RTC module
+ 142   1        transfer_complete = false;
+ 143   1        SMB0_transfer(RTC_DEVICE_ADDRESS << 1, rtc_send_buffer, NULL, RTC_SEND_BUFFER_SIZE, 0);
+ 144   1      
+ 145   1        // Wait for transfer to end
+ 146   1        while(!transfer_complete);
+ 147   1      }
+ 148          
+ 149          
+ 150          void read_time_from_RTC()
+ 151          {
  152   1      
- 153   1          if(++rtc_data.seconds != 60)
- 154   1            return;
- 155   1      
- 156   1          rtc_data.seconds = 0;
- 157   1          if(++rtc_data.minutes != 60)
- 158   1            return;
- 159   1      
- 160   1          rtc_data.minutes = 0;
- 161   1          if(++rtc_data.hours != 24)
- 162   1            return;
- 163   1      
- 164   1          rtc_data.hours = 0;
- 165   1          if(++rtc_data.date != days_of_month())
- 166   1            return;
- 167   1      
- 168   1          rtc_data.date = 1;
- 169   1          if(++rtc_data.month != 13)
- 170   1            return;
- 171   1      
- 172   1          rtc_data.month = 1;
-C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        02/27/2023 07:49:15 PAGE 4   
+ 153   1        // Read data from RTC module
+ 154   1        transfer_complete = false;
+ 155   1        rtc_send_buffer[0] = 0x00;
+ 156   1        SMB0_transfer(RTC_DEVICE_ADDRESS << 1, rtc_send_buffer, rtc_receive_buffer, 1, RTC_RECEIVE_BUFFER_SIZE);
+ 157   1      
+ 158   1        // Wait for transfer to end
+ 159   1        while(!transfer_complete);
+ 160   1      
+ 161   1        // Load rtc data from buffer
+ 162   1        rtc_data.seconds = BCD_to_HEX(rtc_receive_buffer[RTC_SECONDS_REG]);
+ 163   1        rtc_data.minutes = BCD_to_HEX(rtc_receive_buffer[RTC_MINUTES_REG]);
+ 164   1        rtc_data.hours = BCD_to_HEX(rtc_receive_buffer[RTC_HOURS_REG]);
+ 165   1        rtc_data.date = BCD_to_HEX(rtc_receive_buffer[RTC_DATE_REG]);
+ 166   1        rtc_data.month = BCD_to_HEX(rtc_receive_buffer[RTC_MONTH_REG]);
+ 167   1        rtc_data.year = BCD_to_HEX(rtc_receive_buffer[RTC_YEAR_REG]);
+ 168   1        rtc_data.invalid = rtc_receive_buffer[RTC_STATUS_REG] >> RTC_STATUS_REG_OSF__SHIFT;
+ 169   1      
+ 170   1        // Update status LED based on if the rtc data is valid
+ 171   1        set_error_LED(rtc_data.invalid);
+ 172   1      
+ 173   1        // Update sunrise time
+ 174   1        update_sunrise_time();
+C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        03/04/2023 17:14:44 PAGE 4   
 
- 173   1          rtc_data.year++;
- 174   1        }
+ 175   1      }
+ 176          
+ 177          
+ 178          bool is_time_valid()
+ 179          {
+ 180   1        return !rtc_data.invalid;
+ 181   1      }
+ 182          
+ 183          void clock_tick()
+ 184          {
+ 185   1      
+ 186   1      
+ 187   1      }
+ 188          
+ 189          uint8_t get_datetime_command(uint8_t* info_bytes){
+ 190   1        info_bytes[0] = SUCCESSFUL;
+ 191   1        info_bytes[1] = rtc_data.seconds;
+ 192   1        info_bytes[2] = rtc_data.minutes;
+ 193   1        info_bytes[3] = rtc_data.hours;
+ 194   1        info_bytes[4] = rtc_data.date;
+ 195   1        info_bytes[5] = rtc_data.month;
+ 196   1        info_bytes[6] = rtc_data.year;
+ 197   1        return 7;
+ 198   1      }
+ 199          
+ 200          uint8_t set_datetime_command(uint8_t* info_bytes){
+ 201   1        rtc_data.seconds = info_bytes[1];
+ 202   1        rtc_data.minutes = info_bytes[2];
+ 203   1        rtc_data.hours = info_bytes[3];
+ 204   1        rtc_data.date = info_bytes[4];
+ 205   1        rtc_data.month = info_bytes[5];
+ 206   1        rtc_data.year = info_bytes[6];
+ 207   1      
+ 208   1        // Upload time to RTC module
+ 209   1        upload_time_to_RTC();
+ 210   1      
+ 211   1        // Successful response
+ 212   1        info_bytes[0] = SUCCESSFUL;
+ 213   1        return 1;
+ 214   1      }
+ 215          
+ 216          
+ 217          
+ 218          uint8_t get_sunrise_time_command(uint8_t* info_bytes){
+ 219   1        double minutes;
+ 220   1        double seconds;
+ 221   1        info_bytes[0] = SUCCESSFUL;
+ 222   1        info_bytes[1] = (int)sunrise_time;
+ 223   1        minutes = 60*(sunrise_time-info_bytes[1]);
+ 224   1        info_bytes[2] = (int)minutes;
+ 225   1        seconds = 60*(minutes-info_bytes[2]);
+ 226   1        info_bytes[3] = (int)seconds;
+ 227   1        return 4;
+ 228   1      }
+ 229          
+ 230          
+ 231          
+ 232          // SQW 1 Hz interrupt from RTC module to update datetime
+ 233          SI_INTERRUPT (INT0_ISR, INT0_IRQn)
+ 234            {
+ 235   1          // Signal tick event
+ 236   1          event_queue_add_event(EV_CLOCK_TICK);
+ 237   1      
+C51 COMPILER V9.60.0.0   RTC_DRIVER                                                        03/04/2023 17:14:44 PAGE 5   
+
+ 238   1          // Update datetime (trickle down modification)
+ 239   1      
+ 240   1          if(++rtc_data.seconds != 60)
+ 241   1            return;
+ 242   1      
+ 243   1          rtc_data.seconds = 0;
+ 244   1          if(++rtc_data.minutes != 60)
+ 245   1            return;
+ 246   1      
+ 247   1          rtc_data.minutes = 0;
+ 248   1          if(++rtc_data.hours != 24)
+ 249   1            return;
+ 250   1      
+ 251   1          rtc_data.hours = 0;
+ 252   1          if(++rtc_data.date != days_of_month(rtc_data.month, rtc_data.year))
+ 253   1            return;
+ 254   1      
+ 255   1          // Update sunrise time
+ 256   1          update_sunrise_time();
+ 257   1      
+ 258   1          rtc_data.date = 1;
+ 259   1          if(++rtc_data.month != 13)
+ 260   1            return;
+ 261   1      
+ 262   1          rtc_data.month = 1;
+ 263   1          if(++rtc_data.year != 100)
+ 264   1            return;
+ 265   1      
+ 266   1          rtc_data.invalid = 1;
+ 267   1          set_error_LED(rtc_data.invalid);
+ 268   1        }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    504    ----
+   CODE SIZE        =   1077    ----
    CONSTANT SIZE    =     12    ----
-   XDATA SIZE       =     42    ----
+   XDATA SIZE       =     50    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----       2
+   DATA SIZE        =   ----      20
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      1    ----
    EDATA SIZE       =   ----    ----
@@ -214,4 +308,4 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
