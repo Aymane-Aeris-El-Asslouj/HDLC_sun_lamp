@@ -3,6 +3,7 @@ This repository contains the firmware for a sun lamp that communicates with a de
 
 ## HDLC protocol
 ![graphics/gradient.png](graphics/cli.png)
+
 The serial communication with the desktop CLI uses the HDLC protocol which introduces packets with a preamble and a checksum. The packet's body contains commands with arguments that control the lamp's intensity and get the GNSS data.
 
 ## Sun Lamp Function
